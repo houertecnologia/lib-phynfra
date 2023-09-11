@@ -1,0 +1,93 @@
+---
+repos:
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.81.0
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_docs
+        args:
+          - --hook-config=--path-to-file=README.md
+          - --hook-config=--add-to-existing-file=true
+          - --hook-config=--create-file-if-not-exist=true
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: [ "--markdown-linebreak-ext", "md" ]
+        exclude: (^cli_messages\.py)
+      - id: detect-aws-credentials
+        args: [ "--allow-missing-credentials" ]
+      - id: detect-private-key
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: debug-statements
+      # - id: no-commit-to-branch
+      #   args:
+      #     [
+      #       "--branch",
+      #       "main",
+      #       "--pattern",
+      #       "^(?!feature|release|hotfix|support|documentation|feat|fix|dev|chore|docs).+",
+      #     ]
+      - id: mixed-line-ending
+        args: [ "--fix", "lf" ]
+
+  - repo: local
+    hooks:
+      - id: black
+        name: Run Black
+        entry: poetry run black
+        language: system
+        types: [ file, python ]
+        stages: [ commit ]
+
+      - id: isort
+        name: Run Isort
+        entry: poetry run isort
+        language: system
+        types: [ file, python ]
+        stages: [ commit ]
+
+      - id: flake8
+        name: Run Flake8
+        entry: >
+          poetry run pflake8 --ignore "B905,B903"
+          --per-file-ignores "processing/app/commons/helpers/spark_utils.py:E712, processing/app/jobs/sme/landing/extract_ocorrencia.py:E712, processing/app/jobs/sme/landing/extract_monitoramento.py:E203"
+        language: system
+        types: [ file, python ]
+        stages: [ commit ]
+
+      - id: yamllint
+        name: Run Yamllint
+        entry: poetry run yamllint
+        language: system
+        types: [ file, yaml ]
+        stages: [ commit ]
+
+      - id: bandit
+        name: Run Bandit
+        entry: poetry run bandit
+        language: system
+        types: [ file, python ]
+        args:
+          [
+            --configfile,
+            pyproject.toml,
+            --severity-level,
+            all,
+            --confidence-level,
+            all,
+            --quiet,
+            --format,
+            custom
+          ]
+        stages: [ commit ]
+
+      - id: commit-message
+        name: Check commit-message
+        entry: poetry run cz check --commit-msg-file
+        language: system
+        types: [ file, python ]
+        stages: [ commit-msg ]
