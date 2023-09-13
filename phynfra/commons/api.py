@@ -17,7 +17,7 @@ class API:
         self.headers = headers
         self.params = kwargs
 
-    def http_request(self, url: str) -> dict:
+    def request(self, url: str) -> dict:
         """
         Request a object from URL HTTP
 
@@ -36,7 +36,7 @@ class API:
             logger.error(f"Error: {e}")
             raise e
 
-    def get_file(self, url: str):
+    def request_file(self, url: str):
         """
         Get file from URL HTTP
 

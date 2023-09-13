@@ -20,32 +20,32 @@ from pyspark.sql.utils import AnalysisException
 
 
 class DeltaTableMethods:
-    def read_spark_dataframe(self, spark: SparkSession, s3_path: str, table: str, **kwargs) -> DataFrame:
+    def read_spark_dataframe(self, spark: SparkSession, bucket: str, table: str, **kwargs) -> DataFrame:
         """
         Read spark dataframe from s3 bucket
 
         Args:
             spark: Spark session
-            s3_path: AWS s3 path where the table will be save
+            bucket: AWS s3 path where the table will be save
             kwargs: Optional arguments for dataframe
         """
-        logger.info(f"Reading file from {s3_path}{table}")
+        logger.info(f"Reading file from {bucket}{table}")
 
         try:
-            df = spark.read.load(f"{s3_path}{table}", **kwargs)
+            df = spark.read.load(f"{bucket}{table}", **kwargs)
             return df
         except AnalysisException as e:
-            logger.error(f"Error trying to read dataframe from {s3_path}{table}")
+            logger.error(f"Error trying to read dataframe from {bucket}{table}")
             logger.error(e)
             raise e
 
-    def write_delta_table(self, df: DataFrame, s3_path: str, table: str, write_mode: str = "append", **options):
+    def write_delta_table(self, df: DataFrame, bucket: str, table: str, write_mode: str = "append", **options):
         """
         Write delta table in the specified s3 bucket
 
         Args:
             df: Spark Dataframe
-            s3_path: AWS s3 path where the table will be save
+            bucket: AWS s3 path where the table will be save
             table: The name of the table
             write_mode: The write mode (append, overwrite)
             options: Optional arguments for dataframe
@@ -53,18 +53,18 @@ class DeltaTableMethods:
         try:
             writer = df.write.options(**options).format("delta").mode(write_mode)
 
-            logger.info(f"Writing Delta Table {table} in bucket: {s3_path}")
-            writer.save(f"{s3_path}{table}")
+            logger.info(f"Writing Delta Table {table} in bucket: {bucket}")
+            writer.save(f"{bucket}{table}")
 
         except Exception as e:
-            logger.error(f"Error trying to write Delta Table {table} in bucket: {s3_path}")
+            logger.error(f"Error trying to write Delta Table {table} in bucket: {bucket}")
             logger.error(e)
             raise e
 
     def write_partitioned_delta_table(
         self,
         df: DataFrame,
-        s3_path: str,
+        bucket: str,
         table: str,
         partition_columns: list[str],
         write_mode: str = "append",
@@ -74,7 +74,7 @@ class DeltaTableMethods:
 
         Args:
             df: Spark Dataframe
-            s3_path: AWS s3 path where the table will be save
+            bucket: AWS s3 path where the table will be save
             table: The name of the table
             partition_columns: List of partition columns
             write_mode: The write mode (append, overwrite)
@@ -89,11 +89,11 @@ class DeltaTableMethods:
                 .mode(write_mode)
             )
 
-            logger.info(f"Writing Delta Table {table} in bucket: {s3_path} partitioned by {partition_columns}")
-            writer.save(f"{s3_path}{table}")
+            logger.info(f"Writing Delta Table {table} in bucket: {bucket} partitioned by {partition_columns}")
+            writer.save(f"{bucket}{table}")
 
         except Exception as e:
-            logger.error(f"Error trying to write Delta Table {table} in bucket: {s3_path}")
+            logger.error(f"Error trying to write Delta Table {table} in bucket: {bucket}")
             logger.error(e)
             raise e
 
@@ -126,31 +126,31 @@ class DeltaTableMethods:
             logger.debug("Not able to merge because this is the first write made to the Delta Table")
             logger.debug(e)
 
-    def delete_data(self, spark: SparkSession, df_new: DataFrame, pk_list: list, s3_path: str, table: str):
+    def delete_data(self, spark: SparkSession, df_new: DataFrame, pk_list: list, bucket: str, table: str):
         """
-        Delete data in the specified delta table
+        Mark as deleted the record in the specified delta table
 
         Args:
             spark: Spark session
             df_new: New spark dataframe
             pk_list: List of primary keys
-            s3_path: AWS s3 path where the table will be delete
+            bucket: AWS s3 path where the table will be delete
             table: The name of the table
         """
 
         spark_read_options = {
             "format": "delta",
         }
-        df_base = self.read_spark_dataframe(spark=spark, s3_path=s3_path, table=table, **spark_read_options)
+        df_base = self.read_spark_dataframe(spark=spark, s3_path=bucket, table=table, **spark_read_options)
         forms_id = df_new.select(pk_list[0]).distinct().rdd.map(lambda x: x[0]).collect()
         df_base = df_base.filter((F.col(pk_list[0]).isin(forms_id)) & (F.col("deleted_at").isNotNull()))
 
         df_deleted = df_base.select(*pk_list).exceptAll(df_new.select(*pk_list))
         df_deleted = df_deleted.withColumn("deleted_at", F.current_timestamp())
-
-        if df_deleted.count() > 0:
+        # Check
+        if ~df_deleted.isEmpty():
             print(df_deleted.show())
-            table = DeltaTable.forPath(spark, f"{s3_path}{table}")
+            table = DeltaTable.forPath(spark, f"{bucket}{table}")
 
             merge_string_list = [f"destination.{pk} = updates.{pk}" for pk in pk_list]
             merge_string = " AND ".join(merge_string_list)
@@ -168,10 +168,11 @@ class DeltaTableMethods:
 
     def create_views(self, spark: SparkSession, list_temp_views: list):
         """
+        Create view of all delta tables within the list
 
         Args:
-            spark:
-            list_temp_views:
+            spark: Spark session
+            list_temp_views: List of name of views with a specified s3 path
         """
         spark_read_options = {
             "format": "delta",
@@ -187,13 +188,14 @@ class DeltaTableMethods:
 
     def update_data(self, spark: SparkSession, df_new: DataFrame, pk_list: list, bucket: str, table: str):
         """
+        Update delta table in the specified delta table
 
         Args:
-            spark:
-            df_new:
-            pk_list:
-            bucket:
-            table:
+            spark: Spark session
+            df_new: New spark dataframe
+            pk_list: List of primary keys
+            bucket: AWS s3 path where the table will be updated
+            table: The name of the table
         """
         try:
             table = DeltaTable.forPath(spark, bucket + table)
@@ -221,13 +223,16 @@ class DeltaTableMethods:
         self, spark: SparkSession, df: DataFrame, primary_keys: list, bucket: str, table: str
     ):
         """
+        Update or Insert data in the specified delta table.
+        Case the record in destination table not match with update source data. The record will
+        be marked as deleted
 
         Args:
-            spark:
-            df:
-            primary_keys:
-            bucket:
-            table:
+            spark: Spark session
+            df: New spark dataframe
+            primary_keys: List of primary keys
+            bucket: AWS s3 path where the table will be delete
+            table: The name of the table
         """
         try:
             table = DeltaTable.forPath(spark, bucket + table)
@@ -256,9 +261,9 @@ class DeltaTableMethods:
         Remove data that has the same pk, keeping the most recent record
 
         Args:
-            df:
-            primary_keys:
-            ts_column:
+            df: Dataframe to remove duplicate data
+            primary_keys: List of primary keys
+            ts_column: timestamp column
         """
         try:
             window = Window.partitionBy(primary_keys).orderBy(F.col(ts_column).desc(), F.col("tiebreak"))
@@ -277,10 +282,11 @@ class DeltaTableMethods:
 
     def first_write_to_delta_table(self, zone_path: str, table_name: str):
         """
+        Check if delta table exists in the specified bucket.
 
         Args:
-            zone_path:
-            table_name:
+            zone_path: AWS s3 path
+            table_name: The name of the table
         """
         s3_client = get_boto3_session().client("s3")
 
@@ -291,10 +297,11 @@ class DeltaTableMethods:
 
     def get_df_latest_batch(self, df: DataFrame, date_col: str):
         """
+        Get latest batch in dataframe
 
         Args:
-            df:
-            date_col:
+            df: Dataframe
+            date_col: Date column used to filter the latest batch
         """
         logger.info("Getting latest batch of dataframe")
         try:
@@ -315,7 +322,7 @@ class DeltaTableMethods:
         # https://gist.github.com/nmukerje/e65cde41be85470e4b8dfd9a2d6aed50
 
         Args:
-            df:
+            df: Dataframe
         """
         try:
             logger.info("Flattening Spark DataFrame")
