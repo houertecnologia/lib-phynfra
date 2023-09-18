@@ -1,7 +1,9 @@
 from delta.tables import DeltaTable
 from loguru import logger
+from pandas import DataFrame as PandasDataFrame
 from phynfra.aws.storage import check_s3_folder
 from phynfra.aws.storage import get_boto3_session
+from phynfra.commons.utils import convert_pandas_df_to_list
 from phynfra.commons.utils import get_bucket_name_from_zone_path
 from phynfra.commons.utils import get_folder_from_zone_path
 from pyspark.sql import DataFrame
@@ -14,6 +16,7 @@ from pyspark.sql.types import FloatType
 from pyspark.sql.types import IntegerType
 from pyspark.sql.types import LongType
 from pyspark.sql.types import StringType
+from pyspark.sql.types import StructField
 from pyspark.sql.types import StructType
 from pyspark.sql.types import TimestampType
 from pyspark.sql.utils import AnalysisException
@@ -369,11 +372,21 @@ class DeltaTableMethods:
 
     def get_date_partition_columns(self, df: DataFrame, base_column: str):
         """
+        Extracts 'year' and 'month' partition columns from a specified date column in a DataFrame.
+
+        Given a DataFrame and the name of a date column within it, this method adds two new columns 'year' and 'month'
+        based on the values in the specified date column. It's useful for creating partitioned datasets based on date.
 
         Args:
-            df:
-            base_column:
+            df (DataFrame): The input DataFrame containing the date column to be processed.
+            base_column (str): The name of the date column in the input DataFrame from which
+            'year' and 'month' columns are to be extracted.
+
+        Returns:
+            DataFrame: A new DataFrame with the added 'year' and 'month' columns.
+            list: A list of the newly added column names ['year', 'month'].
         """
+
         new_df = df.withColumn("year", F.date_format(F.col(base_column), "yyyy")).withColumn(
             "month", F.date_format(F.col(base_column), "MM")
         )
@@ -382,9 +395,16 @@ class DeltaTableMethods:
 
     def get_spark_equivalent_type(self, arrow_type: str):
         """
+        Retrieve the Spark equivalent data type for a given PyArrow type.
+
+        This method provides a mapping from PyArrow data types to Spark data types.
+        If the provided `arrow_type` does not have a direct mapping, it defaults to Spark's StringType().
 
         Args:
-            arrow_type:
+            arrow_type (str): The PyArrow data type in string format for which the Spark equivalent is required.
+
+        Returns:
+            DataType: The Spark equivalent data type for the given PyArrow type. Defaults to StringType() if no mapping is found.
         """
         arrow_spark_types_dict = {
             "timestamp[pyarrow]": TimestampType(),
@@ -398,12 +418,53 @@ class DeltaTableMethods:
 
     def replace_caracter_in_df_columns(self, df: DataFrame, old_caracter: str, new_caracter: str) -> DataFrame:
         """
+        Replace specific characters in the column names of a DataFrame.
+
+        This method scans through the column names of the given DataFrame and replaces occurrences of `old_caracter` with `new_caracter`.
 
         Args:
-            df:
-            old_caracter:
-            new_caracter:
+            df (DataFrame): Input DataFrame whose column names are to be modified.
+            old_caracter (str): The character (or string) to be replaced in the column names.
+            new_caracter (str): The character (or string) that will replace the `old_caracter` in the column names.
+
+        Returns:
+            DataFrame: A DataFrame with modified column names.
         """
         new_columns = [col.replace(old_caracter, new_caracter) for col in df.columns]
 
         return df.toDF(*new_columns)
+
+    def convert_pandas_df_to_spark_df(
+        self, spark: SparkSession, df: PandasDataFrame, int_constant: int = -1234567
+    ) -> DataFrame:
+        """
+        Convert a Pandas DataFrame to a Spark DataFrame.
+
+        This method provides compatibility for conversions of Pandas DataFrames to Spark DataFrames,
+        especially for Pandas versions >= 2.0.0 which aren't compatible with `spark.createDataFrame` directly.
+
+        Args:
+            spark (SparkSession): An active Spark session to create the Spark DataFrame.
+            df (PandasDataFrame): The Pandas DataFrame to be converted.
+            int_constant (int, optional): A constant integer value to be replaced in the resulting Spark DataFrame. Defaults to -1234567.
+
+        Returns:
+            DataFrame: A Spark DataFrame converted from the input Pandas DataFrame.
+
+        """
+
+        df_columns = list(df.columns)
+        df_types = list(df.dtypes)
+        spark_struct_list = []
+
+        for df_column, df_type in zip(df_columns, df_types):
+            spark_type = self.get_spark_equivalent_type(str(df_type))
+            spark_struct_field = StructField(df_column, spark_type)
+
+            spark_struct_list.append(spark_struct_field)
+
+        spark_df_schema = StructType(spark_struct_list)
+
+        data = convert_pandas_df_to_list(df)
+
+        return spark.createDataFrame(data, schema=spark_df_schema).replace(int_constant, None)

@@ -23,6 +23,7 @@ httpx = "0.24.1"
 openpyxl = "^3.1.2"
 python-dotenv = "^1.0.0"
 s3fs = "^2023.9.0"
+pre-commit = "2.21.0"
 
 [tool.poetry.group.lint.dependencies]
 flake8 = "^5.0.4"                                 # Style Guide Enforcement
