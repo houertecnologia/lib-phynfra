@@ -1,7 +1,9 @@
 from delta.tables import DeltaTable
 from loguru import logger
+from pandas import DataFrame as PandasDataFrame
 from phynfra.aws.storage import check_s3_folder
 from phynfra.aws.storage import get_boto3_session
+from phynfra.commons.utils import convert_pandas_df_to_list
 from phynfra.commons.utils import get_bucket_name_from_zone_path
 from phynfra.commons.utils import get_folder_from_zone_path
 from pyspark.sql import DataFrame
@@ -14,6 +16,7 @@ from pyspark.sql.types import FloatType
 from pyspark.sql.types import IntegerType
 from pyspark.sql.types import LongType
 from pyspark.sql.types import StringType
+from pyspark.sql.types import StructField
 from pyspark.sql.types import StructType
 from pyspark.sql.types import TimestampType
 from pyspark.sql.utils import AnalysisException
@@ -407,3 +410,24 @@ class DeltaTableMethods:
         new_columns = [col.replace(old_caracter, new_caracter) for col in df.columns]
 
         return df.toDF(*new_columns)
+
+    def convert_pandas_df_to_spark_df(
+        self, spark: SparkSession, df: PandasDataFrame, int_constant: int = -1234567
+    ) -> DataFrame:
+        # this is necessary because the method spark.createDataFrame is not compatible with pandas >= 2.0.0
+
+        df_columns = list(df.columns)
+        df_types = list(df.dtypes)
+        spark_struct_list = []
+
+        for df_column, df_type in zip(df_columns, df_types):
+            spark_type = self.get_spark_equivalent_type(str(df_type))
+            spark_struct_field = StructField(df_column, spark_type)
+
+            spark_struct_list.append(spark_struct_field)
+
+        spark_df_schema = StructType(spark_struct_list)
+
+        data = convert_pandas_df_to_list(df)
+
+        return spark.createDataFrame(data, schema=spark_df_schema).replace(int_constant, None)
