@@ -290,12 +290,13 @@ class DeltaTableMethods:
             zone_path: AWS s3 path
             table_name: The name of the table
         """
-        s3_client = AWSBucket.get_boto3_session().client("s3")
+        aws_bucket = AWSBucket()
+        s3_client = aws_bucket.get_boto3_session().client("s3")
 
         bucket_name = get_bucket_name_from_zone_path(zone_path)
         folder_name = get_folder_from_zone_path(zone_path)
 
-        return not (AWSBucket.check_s3_folder(s3_client, bucket_name, folder_name + f"{table_name}/"))
+        return not (aws_bucket.check_s3_folder(s3_client, bucket_name, folder_name + f"{table_name}/"))
 
     def get_df_latest_batch(self, df: DataFrame, date_col: str):
         """
