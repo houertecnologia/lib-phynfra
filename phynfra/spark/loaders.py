@@ -1,8 +1,7 @@
 from delta.tables import DeltaTable
 from loguru import logger
 from pandas import DataFrame as PandasDataFrame
-from phynfra.aws.storage import check_s3_folder
-from phynfra.aws.storage import get_boto3_session
+from phynfra.aws.storage import AWSBucket
 from phynfra.commons.utils import convert_pandas_df_to_list
 from phynfra.commons.utils import get_bucket_name_from_zone_path
 from phynfra.commons.utils import get_folder_from_zone_path
@@ -291,12 +290,12 @@ class DeltaTableMethods:
             zone_path: AWS s3 path
             table_name: The name of the table
         """
-        s3_client = get_boto3_session().client("s3")
+        s3_client = AWSBucket.get_boto3_session().client("s3")
 
         bucket_name = get_bucket_name_from_zone_path(zone_path)
         folder_name = get_folder_from_zone_path(zone_path)
 
-        return not (check_s3_folder(s3_client, bucket_name, folder_name + f"{table_name}/"))
+        return not (AWSBucket.check_s3_folder(s3_client, bucket_name, folder_name + f"{table_name}/"))
 
     def get_df_latest_batch(self, df: DataFrame, date_col: str):
         """
