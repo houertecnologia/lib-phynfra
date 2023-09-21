@@ -14,10 +14,10 @@ repos:
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
-        args: [ "--markdown-linebreak-ext", "md" ]
+        args: ["--markdown-linebreak-ext", "md"]
         exclude: (^cli_messages\.py)
       - id: detect-aws-credentials
-        args: [ "--allow-missing-credentials" ]
+        args: ["--allow-missing-credentials"]
       - id: detect-private-key
       - id: check-added-large-files
       - id: check-merge-conflict
@@ -32,7 +32,7 @@ repos:
       #       "^(?!feature|release|hotfix|support|documentation|feat|fix|dev|chore|docs).+",
       #     ]
       - id: mixed-line-ending
-        args: [ "--fix", "lf" ]
+        args: ["--fix", "lf"]
 
   - repo: local
     hooks:
@@ -40,15 +40,15 @@ repos:
         name: Run Black
         entry: poetry run black
         language: system
-        types: [ file, python ]
-        stages: [ commit ]
+        types: [file, python]
+        stages: [commit]
 
       - id: isort
         name: Run Isort
         entry: poetry run isort
         language: system
-        types: [ file, python ]
-        stages: [ commit ]
+        types: [file, python]
+        stages: [commit]
 
       - id: flake8
         name: Run Flake8
@@ -56,21 +56,21 @@ repos:
           poetry run pflake8 --ignore "B905,B903"
           --per-file-ignores "processing/app/commons/helpers/spark_utils.py:E712, processing/app/jobs/sme/landing/extract_ocorrencia.py:E712, processing/app/jobs/sme/landing/extract_monitoramento.py:E203"
         language: system
-        types: [ file, python ]
-        stages: [ commit ]
+        types: [file, python]
+        stages: [commit]
 
       - id: yamllint
         name: Run Yamllint
         entry: poetry run yamllint
         language: system
-        types: [ file, yaml ]
-        stages: [ commit ]
+        types: [file, yaml]
+        stages: [commit]
 
       - id: bandit
         name: Run Bandit
         entry: poetry run bandit
         language: system
-        types: [ file, python ]
+        types: [file, python]
         args:
           [
             --configfile,
@@ -81,13 +81,13 @@ repos:
             all,
             --quiet,
             --format,
-            custom
+            custom,
           ]
-        stages: [ commit ]
+        stages: [commit]
 
       - id: commit-message
         name: Check commit-message
         entry: poetry run cz check --commit-msg-file
         language: system
-        types: [ file, python ]
-        stages: [ commit-msg ]
+        types: [file, python]
+        stages: [commit-msg]
