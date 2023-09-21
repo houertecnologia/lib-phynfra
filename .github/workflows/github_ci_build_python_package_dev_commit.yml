@@ -9,6 +9,7 @@ on:
       - Dockerfile
       - poetry.lock
       - pyproject.toml
+      - phynfra
 
 env:
   EMR_SERVERLESS_BUCKET: "s3://dev-houer-us-east-1-emr-serverless/python-packages/lib-phynfra"
