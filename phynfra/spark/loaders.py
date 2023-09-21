@@ -438,18 +438,16 @@ class DeltaTableMethods:
         self, spark: SparkSession, df: PandasDataFrame, int_constant: int = -1234567
     ) -> DataFrame:
         """
-        Convert a Pandas DataFrame to a Spark DataFrame.
-
-        This method provides compatibility for conversions of Pandas DataFrames to Spark DataFrames,
-        especially for Pandas versions >= 2.0.0 which aren't compatible with `spark.createDataFrame` directly.
+        Selects columns from a DataFrame based on desired prefixes, ignoring some prefixes and always including others.
 
         Args:
-            spark (SparkSession): An active Spark session to create the Spark DataFrame.
-            df (PandasDataFrame): The Pandas DataFrame to be converted.
-            int_constant (int, optional): A constant integer value to be replaced in the resulting Spark DataFrame. Defaults to -1234567.
+            df (DataFrame): The input DataFrame from which columns will be selected.
+            desired_prefix (str): The prefix desired for columns to be selected.
+            prefixes_to_ignore (list): List of column prefixes to be ignored in the selection.
+            always_include (list): List of column names that should always be included regardless of their prefix.
 
         Returns:
-            DataFrame: A Spark DataFrame converted from the input Pandas DataFrame.
+            DataFrame: A new DataFrame containing only the selected columns.
 
         """
 
