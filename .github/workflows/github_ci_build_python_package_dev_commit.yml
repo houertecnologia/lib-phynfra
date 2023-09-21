@@ -4,45 +4,53 @@ name: Create and Copy Python Package
 on:
   push:
     branches:
-    - main
+      - main
     paths:
-    - Dockerfile
-    - poetry.lock
-    - pyproject.toml
+      - Dockerfile
+      - poetry.lock
+      - pyproject.toml
 
 env:
   EMR_SERVERLESS_BUCKET: "s3://dev-houer-us-east-1-emr-serverless/python-packages/lib-phynfra"
 
 jobs:
   python-build-package:
-    name: 'build python package'
+    name: "build python package"
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: "us-east-1"
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: "us-east-1"
 
-    - name: Setup Poetry
-      uses: Gr1N/setup-poetry@v8
+      - name: Setup Poetry
+        uses: Gr1N/setup-poetry@v8
 
-    - name: Create requirements file
-      run: |
+      - name: Create requirements file
+        run: |
           poetry export -f requirements.txt --output requirements.txt
 
-    - name: Set up Docker Build
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Build
+        uses: docker/setup-buildx-action@v2
 
-    - name: Build python package using Docker
-      run: |
-        docker buildx build -f Dockerfile --output . .
+      - name: Build python package using Docker
+        run: |
+          docker buildx build -f Dockerfile --output . .
 
-    - name: Copy Python Package to S3
-      run: |
-        aws s3 cp pyspark_delta_package.tar.gz $EMR_SERVERLESS_BUCKET/dev/latest/
+      - name: Copy Python Package to S3
+        run: |
+          aws s3 cp pyspark_delta_package.tar.gz $EMR_SERVERLESS_BUCKET/dev/latest
+
+      - name: Zip Phynfra Folder
+        run: |
+          zip -r phynfra.zip phynfra/
+
+      - name: Copy Python Zip Files to S3
+        run: |
+          aws s3 cp phynfra.zip $EMR_SERVERLESS_BUCKET/dev/latest/

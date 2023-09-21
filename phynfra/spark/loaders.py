@@ -468,3 +468,28 @@ class DeltaTableMethods:
         data = convert_pandas_df_to_list(df)
 
         return spark.createDataFrame(data, schema=spark_df_schema).replace(int_constant, None)
+
+    def select_by_prefix(
+        self, df: DataFrame, desired_prefix: str, prefixes_to_ignore: list, always_include: list
+    ) -> DataFrame:
+        """
+        Seleciona colunas de um DataFrame baseado em prefixos desejados, ignorando alguns e sempre incluindo outros.
+
+        Args:
+            df (DataFrame): O DataFrame de entrada do qual as colunas serão selecionadas.
+            desired_prefix (str): O prefixo desejado das colunas que serão selecionadas.
+            prefixes_to_ignore (list): Lista de prefixos de colunas para serem ignorados na seleção.
+            always_include (list): Lista de nomes de colunas que sempre devem ser incluídos, independentemente do prefixo.
+
+        Returns:
+            DataFrame: Um novo DataFrame contendo apenas as colunas selecionadas.
+        """
+        return df.select(
+            *[
+                col
+                for col in df.columns
+                if col.startswith(desired_prefix)
+                or not any(col.startswith(prefix) for prefix in prefixes_to_ignore)  # noqa: W503
+                or col in always_include  # noqa: W503
+            ]
+        )
