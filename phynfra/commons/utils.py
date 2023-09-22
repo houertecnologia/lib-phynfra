@@ -1,5 +1,10 @@
 import re
 
+from datetime import datetime
+from datetime import timezone
+
+import boto3
+
 from loguru import logger
 from pandas import DataFrame as PandasDataFrame
 from pandas import read_excel
@@ -91,3 +96,32 @@ def convert_pandas_df_to_list(df: PandasDataFrame) -> list:
         df:
     """
     return [tuple(array) for array in df.values]
+
+
+def get_latest_file_name(bucket_name: str, prefix: str) -> str:
+    # Inicialize um cliente do S3
+    s3 = boto3.client("s3")
+
+    # Inicialize a variável para armazenar o objeto mais recente
+    latest_obj = None
+    latest_time = datetime(1970, 1, 1, tzinfo=timezone.utc)  # data inicial
+
+    # Liste todos os objetos no prefixo dado
+    objects = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+
+    # Se existirem objetos no prefixo especificado
+    if "Contents" in objects:
+        # Iterar por cada objeto
+        for obj in objects["Contents"]:
+            # Verifique a data de criação (última modificação) do objeto
+            if obj["LastModified"] > latest_time:
+                latest_time = obj["LastModified"]
+                latest_obj = obj
+
+    # Se um objeto mais recente for encontrado, retorne o nome do arquivo
+    if latest_obj:
+        # O nome do arquivo é a parte da key depois do último '/'
+        file_name = latest_obj["Key"].split("/")[-1]
+        return file_name
+    else:
+        return None
