@@ -510,7 +510,7 @@ class DeltaTableMethods:
             logger.info(f"Criando a temp da tabela {item['name']}")
             logger.info(f"Bucket {item['bucket']}")
             temp_table = self.read_spark_dataframe(
-                spark=spark, s3_path=item["bucket"], table=item["table"], **spark_read_options
+                spark=spark, bucket=item["bucket"], table=item["table"], **spark_read_options
             )
             self.get_df_latest_batch(temp_table, item["date_col"])
             temp_table.createOrReplaceTempView(item["name"])
