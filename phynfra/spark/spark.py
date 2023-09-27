@@ -22,6 +22,7 @@ class SparkInstance:
             .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
             .config("spark.dynamicAllocation.enabled", "true")
             .config("spark.delta.schema.autoMerge.enabled", "true")
+            .config("spark.databricks.delta.schema.autoMerge.enabled", "true")
         )
 
         spark_session = spark_session_builder.getOrCreate()
