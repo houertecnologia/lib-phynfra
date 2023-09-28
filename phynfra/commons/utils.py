@@ -28,7 +28,7 @@ def get_folder_from_zone_path(zone_path: str) -> str:
         zone_path: Path where the tables are loaded
     """
     bucket_name = get_bucket_name_from_zone_path(zone_path)
-    return zone_path.replace(f"s3a://{bucket_name}/", "")
+    return zone_path.replace(f"s3://{bucket_name}/", "")
 
 
 def replace_camelcase_2_snakecase(name: str):
