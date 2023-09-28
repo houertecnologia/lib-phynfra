@@ -143,7 +143,7 @@ class DeltaTableMethods:
         spark_read_options = {
             "format": "delta",
         }
-        df_base = self.read_spark_dataframe(spark=spark, s3_path=bucket, table=table, **spark_read_options)
+        df_base = self.read_spark_dataframe(spark=spark, bucket=bucket, table=table, **spark_read_options)
         forms_id = df_new.select(pk_list[0]).distinct().rdd.map(lambda x: x[0]).collect()
         df_base = df_base.filter((F.col(pk_list[0]).isin(forms_id)) & (F.col("deleted_at").isNotNull()))
 
@@ -184,7 +184,7 @@ class DeltaTableMethods:
             logger.info(f"Criando a temp da tabela {item['name']}")
             logger.info(f"Bucket {item['bucket']}")
             temp_table = self.read_spark_dataframe(
-                spark=spark, s3_path=item["bucket"], table=item["table"], **spark_read_options
+                spark=spark, bucket=item["bucket"], table=item["table"], **spark_read_options
             )
             temp_table.createOrReplaceTempView(item["name"])
 
