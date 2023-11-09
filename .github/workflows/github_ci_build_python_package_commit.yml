@@ -7,7 +7,7 @@ on:
       - main
 
 env:
-  EMR_SERVERLESS_BUCKET: "s3://dev-houer-us-east-1-emr-serverless/python-packages/lib-phynfra"
+  EMR_SERVERLESS_BUCKET: "s3://dev-houer-us-east-1-emr-serverless/python-internal-libs/lib-phynfra"
 
 jobs:
   python-build-package:
@@ -27,6 +27,22 @@ jobs:
 
       - name: Setup Poetry
         uses: Gr1N/setup-poetry@v8
+
+      - name: Build python package using Poetry
+        run: |
+          poetry build --format=wheel
+
+      - name: Get wheel package version
+        id: wheel_version
+        run: |
+          PROJECT_VERSION=$(grep -m 1 version pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d' ' -f3)
+          echo "WHEEL_VERSION=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Send phynfra wheel package to AWS
+        env:
+          WHEEL_VERSION: ${{ steps.wheel_version.outputs.WHEEL_VERSION }}
+        run: |
+          aws s3 cp phynfra-$WHEEL_VERSION-py3-none-any.whl $EMR_SERVERLESS_BUCKET/main/
 
       - name: Create requirements file
         run: |
