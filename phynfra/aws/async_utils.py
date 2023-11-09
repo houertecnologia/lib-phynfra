@@ -28,4 +28,4 @@ class AsyncResponseMonitoramento(AsyncResponse):
 
 
 def get_failed_async_tasks_name(response_list: List[AsyncResponse]) -> List:
-    return [response.name for response in response_list if not response.task_success]
+    return [response.task_name for response in response_list if not response.task_success]
