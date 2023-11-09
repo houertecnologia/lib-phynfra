@@ -7,7 +7,8 @@ on:
       - main
 
 env:
-  EMR_SERVERLESS_BUCKET: "s3://dev-houer-us-east-1-emr-serverless/python-internal-libs/lib-phynfra"
+  EMR_SERVERLESS_BUCKET: "s3://dev-houer-us-east-1-emr-serverless/python-packages/lib-phynfra"
+  EMR_SERVERLESS_WHEEL_BUCKET: "s3://dev-houer-us-east-1-emr-serverless/python-internal-libs/lib-phynfra"
 
 jobs:
   python-build-package:
@@ -42,7 +43,7 @@ jobs:
         env:
           WHEEL_VERSION: ${{ steps.wheel_version.outputs.WHEEL_VERSION }}
         run: |
-          aws s3 cp phynfra-$WHEEL_VERSION-py3-none-any.whl $EMR_SERVERLESS_BUCKET/main/
+          aws s3 cp dist/phynfra-$WHEEL_VERSION-py3-none-any.whl $EMR_SERVERLESS_WHEEL_BUCKET/main/
 
       - name: Create requirements file
         run: |
