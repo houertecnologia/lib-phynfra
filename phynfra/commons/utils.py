@@ -80,7 +80,7 @@ def read_xlsx(file_path: str, sheet_name: str) -> PandasDataFrame:
 
     logger.info(f"Reading sheet {sheet_name} from xlsx file from {file_path}")
     try:
-        df = read_excel(file_path, sheet_name=sheet_name, dtype_backend="pyarrow")
+        df = read_excel(file_path, sheet_name=sheet_name)
         df = fill_null_string_values(df)
         return df
     except Exception as e:
