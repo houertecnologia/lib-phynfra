@@ -18,7 +18,6 @@ class SparkInstance:
             SparkSession.builder.appName(self.app_name)
             .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
             .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
-            .config("spark.sql.session.timeZone", "UTC")
             .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
             .config("spark.dynamicAllocation.enabled", "true")
             .config("spark.delta.schema.autoMerge.enabled", "true")
