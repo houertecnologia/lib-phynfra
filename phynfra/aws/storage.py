@@ -123,12 +123,12 @@ class AWSBucket:
 
             if len(objects) > 0:
                 logger.debug(
-                    f"The folder exists or there are files on the folder '{folder_prefix}' in S3 bucket '{bucket_name}'"
+                    f"The folder exists or there are files in the folder '{folder_prefix}' in S3 bucket '{bucket_name}'"
                 )
                 return True
             else:
                 logger.debug(
-                    f"The folder does not exist or there are no files on the folder '{folder_prefix}' in S3 bucket '{bucket_name}'"
+                    f"The folder does not exist or there are no files in the folder '{folder_prefix}' in S3 bucket '{bucket_name}'"
                 )
                 return False
         except Exception as e:
