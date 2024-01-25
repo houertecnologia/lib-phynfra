@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd ..
+
 rm -fr venv
 rm -fr phynfra.egg-info
 rm poetry.lock
@@ -13,6 +15,5 @@ source venv/bin/activate
 pip install poetry
 poetry install
 poetry build
-pip install -e .
 
 #git push origin master
