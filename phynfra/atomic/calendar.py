@@ -2,7 +2,7 @@
 
 import pytz
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 def now (string = True, zone = None):
 	'''
@@ -19,3 +19,14 @@ def now (string = True, zone = None):
 	output = datetime.now(tz)
 
 	return output if not string else output.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+
+def difference (past = None, future = None, unit = 'minutes', duration = 1):
+	'''
+	'''
+
+	difference = abs(future - past)
+
+	kwargs = {}
+	kwargs[unit] = duration
+
+	return difference > timedelta(**kwargs)

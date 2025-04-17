@@ -65,9 +65,9 @@ class PowerBI ():
 
 			self.accesstoken = json.loads(response.text, ensure_ascii = False)
 
-			self.accesstoken['created_at'] = now(string = True, 'America/Sao_Paulo')
+			self.accesstoken['created_at'] = now(True, 'America/Sao_Paulo')
 
-			return self	
+			return self
 
 		except Exception as parseError:
 

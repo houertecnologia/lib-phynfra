@@ -24,6 +24,28 @@ class Fetcher ():
 
 		self.raw = raw
 
+	def update (self, url = None, raw = False):
+		'''
+		url:str - URL
+		raw:bool - Returns raw response or chopped one
+		'''
+
+		if url != None and (not isinstance(url, str) or url == ''):
+
+			raise ValueError('URL must be a valid url string')
+
+		else:
+
+			self.url = url
+
+		if raw != None and (not isinstance(raw, bool)):
+
+			raise ValueError('RAW must be a valid boolean')
+
+		else:
+
+			self.raw = raw
+
 	def fetch (self, verb = None, payload = None, headers = None, cookies = None, auth = None, stream = STREAM, timeout = TIMEOUT, verify = VERIFY):
 		'''
 		'''
@@ -81,7 +103,8 @@ class Fetcher ():
 			return response if self.raw == True else {
 				'response': response.text if stream == False else response.content,
 				'status': response.status_code,
-				'headers': response.headers
+				'headers': response.headers,
+				'ok': str(response.status_code).startswith('2')
 			}
 
 		except Exception as requestError:

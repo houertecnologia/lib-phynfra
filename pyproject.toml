@@ -35,7 +35,10 @@ pandas = "*"
 python-dotenv = "*"
 pyspark = "*"
 requests = "*"
-pytz = "*"
+pytz = "*"	
+pyjwt = "*"
+cryptography = "*"
+slack_sdk = "*"
 
 [tool.poetry.dev-dependencies]
 poetry = "*"

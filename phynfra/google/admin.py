@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-class Glue ():
+class Admin ():
 	'''
 	'''
 
