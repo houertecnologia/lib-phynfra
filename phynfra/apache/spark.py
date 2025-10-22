@@ -36,7 +36,7 @@ class Spark ():
 
 				for (key, value) in configuration.items():
 
-					builder.config(key, value)
+					builder.config(str(key).strip(), str(value).strip())
 
 			else:
 
