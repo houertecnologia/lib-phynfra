@@ -44,8 +44,6 @@ class Spark ():
 
 			self.spark = builder.getOrCreate()
 
-			self.spark.sparkContext.setLogLevel(level)
-
 		except Exception as error:
 
 			raise error
