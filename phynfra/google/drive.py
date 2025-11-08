@@ -29,7 +29,7 @@ class Drive ():
 
 		self.accessToken = accessToken
 
-	def fetchOrCreatePathInSharedDrive (self, root = None, fullpath = None):
+	def fetch_or_create_path_in_shared_drive (self, root = None, fullpath = None):
 		'''
 		root:str - Shared Drive ID (https://drive.google.com/drive/u/2/folders/SHAREDDRIVEID)
 		fullpath:str - a/b/c
@@ -132,7 +132,7 @@ class Drive ():
 
 				raise RuntimeError("Internal error when fetching of creating path in Shared Drive") from processError
 
-	def uploadFileToSharedDrive (self, bufferedFile = None, mimetype = None, metadata = None):
+	def upload_file_to_shared_drive (self, bufferedFile = None, mimetype = None, metadata = None):
 		'''
 		metadata:dict - description, name, parents[]
 		'''
@@ -177,7 +177,7 @@ class Drive ():
 
 			raise RuntimeError("Exception when upload file to Google Drive") from uploadError
 
-	def unloadFileFromSharedDrive (self, fileId = None):
+	def unload_file_from_shared_drive (self, fileId = None):
 		'''
 		PENDING
 		'''
@@ -204,7 +204,7 @@ class Drive ():
 
 			raise RuntimeError("Exception when deleting a file from Google Drive") from deleteError
 
-	def downloadFileFromSharedDrive (self, fileId, fullpath = None):
+	def download_file_from_shared_drive (self, fileId, fullpath = None):
 		'''
 		filename:str if fullpath (filename from google drive)
 		binary:bytes if not fullpath
@@ -276,7 +276,7 @@ class Drive ():
 
 			raise RuntimeError("Exception when fetching metadata from a file from Google Drive") from fetchError
 
-	def copyFileInSharedDrive (self, fileId, target):
+	def copy_file_in_shared_drive (self, fileId, target):
 		'''
 		'''
 
@@ -307,7 +307,7 @@ class Drive ():
 
 			raise RuntimeError("Exception when copying a file from Google Drive") from copyingError
 
-	def moveFileInSharedDrive (self, fileId, removeParents, addParents):
+	def move_file_in_shared_drive (self, fileId, removeParents, addParents):
 		'''
 		fileId:str
 		removeParents:[str]
@@ -341,7 +341,7 @@ class Drive ():
 
 			raise RuntimeError("Exception when moving a file from Google Drive") from movingError
 
-	def recursivePlainListFilesByPageToken (self, driveId = None, parents = None, pageToken = None, output = None):
+	def recursive_plain_list_files_by_page_token (self, driveId = None, parents = None, pageToken = None, output = None):
 		'''
 		output must be an array, outside the first call defined
 		'''
@@ -399,9 +399,9 @@ class Drive ():
 
 				if 'nextPageToken' in filesResponse and filesResponse['nextPageToken']:
 
-					self.recursivePlainListFilesByPageToken(driveId, parents, filesResponse['nextPageToken'], output)		
+					self.recursive_plain_list_files_by_page_token(driveId, parents, filesResponse['nextPageToken'], output)		
 
-	def recursiveDeepListFilesByPageToken (self, driveId = None, parents = None, pageToken = None, output = None):
+	def recursive_deep_list_files_by_page_token (self, driveId = None, parents = None, pageToken = None, output = None):
 		'''
 		output must be an array, outside the first call defined
 		'''
@@ -449,7 +449,7 @@ class Drive ():
 
 					if file['mimeType'] == 'application/vnd.google-apps.folder':
 
-						self.recursiveDeepListFilesByPageToken(driveId, file['id'], False, output)
+						self.recursive_deep_list_files_by_page_token(driveId, file['id'], False, output)
 
 					else:
 
@@ -457,9 +457,9 @@ class Drive ():
 
 				if 'nextPageToken' in filesResponse and filesResponse['nextPageToken']:
 
-					self.recursiveDeepListFilesByPageToken(driveId, parents, filesResponse['nextPageToken'], output)
+					self.recursive_deep_list_files_by_page_token(driveId, parents, filesResponse['nextPageToken'], output)
 
-	def recursiveDeepTreeListFilesByPageToken (self, driveId = None, parents = None, pageToken = None, output = None):
+	def recursive_deep_tree_list_files_by_page_token (self, driveId = None, parents = None, pageToken = None, output = None):
 		'''
 		output must be a dict, outside the first call defined
 		output = {'files': []}
@@ -512,7 +512,7 @@ class Drive ():
 							'files': []
 						}
 
-						self.recursiveDeepTreeListFilesByPageToken(driveId, file['id'], False, output[file['name']])
+						self.recursive_deep_tree_list_files_by_page_token(driveId, file['id'], False, output[file['name']])
 
 					else:
 
@@ -520,4 +520,4 @@ class Drive ():
 
 				if 'nextPageToken' in filesResponse and filesResponse['nextPageToken']:
 
-					self.recursiveDeepTreeListFilesByPageToken(driveId, parents, filesResponse['nextPageToken'], output)
+					self.recursive_deep_tree_list_files_by_page_token(driveId, parents, filesResponse['nextPageToken'], output)

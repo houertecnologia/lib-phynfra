@@ -6,11 +6,13 @@ import re
 import traceback
 import json
 
-from .logger import log
+from phynfra.atomic.logger import Logger
 from dotenv import dotenv_values, load_dotenv
 from importlib import import_module
 
 REGEX_MODULE = r'[0-9a-zA-Z_]+(\.[0-9a-zA-Z_]+)*'
+
+LOGGER = Logger()
 
 def run (configuration = None, module = None):
 	'''
@@ -18,6 +20,8 @@ def run (configuration = None, module = None):
 	configuration:dict - python-dotenv to dict
 	module:str - full module path (. separated)
 	'''
+
+	global LOGGER
 
 	modulepath = configuration['MODULE'] if 'MODULE' in configuration else module
 
@@ -51,7 +55,7 @@ def run (configuration = None, module = None):
 
 				try:
 
-					function(configuration)
+					function(settings = configuration, logger = LOGGER)
 
 					return {'message': '%s executed successfully' % (modulepath), 'exitcode': 0}
 
@@ -134,13 +138,13 @@ if __name__ == '__main__':
 
 		load_dotenv(arguments.configuration)
 
-		log('Executing with data from %s' % arguments.configuration, 'INFO')
+		LOGGER.info('Executing with data from %s' % arguments.configuration)
 
 	else:
 
 		configuration = dict(os.environ)
 
-		log('Executing with data from environment variables', 'INFO')
+		LOGGER.info('Executing with data from environment variables')
 
 	if arguments.command == 'run':
 
@@ -148,13 +152,13 @@ if __name__ == '__main__':
 
 		if arguments.debug == 1:
 
-			log(json.dumps(configuration, indent = '\t', ensure_ascii = False), 'DEBUG')
+			LOGGER.debug(json.dumps(configuration, indent = '\t', ensure_ascii = False))
 
 		try:
 
 			output = run(configuration = configuration, module = arguments.module)
 
-			log(output['message'], 'INFO')
+			LOGGER.info(output['message'])
 
 			sys.exit(output['exitcode'])
 
@@ -162,7 +166,7 @@ if __name__ == '__main__':
 
 			trace = traceback.format_exc()
 
-			log('Exception when running a module\'s function. Follow the traceback:\n%s' % trace, 'ERROR')
+			LOGGER.error('Exception when running a module\'s function. Follow the traceback:\n%s' % trace)
 
 			sys.exit(1)
 
@@ -170,7 +174,7 @@ if __name__ == '__main__':
 
 		output = create(configuration = configuration, destination = arguments.destination)
 
-		log(output['message'], 'INFO')
+		LOGGER.info(output['message'])
 
 		sys.exit(output['exitcode'])
 
@@ -178,6 +182,6 @@ if __name__ == '__main__':
 
 		output = transform(configuration = configuration, source = arguments.source, target = arguments.target)
 
-		log(output['message'], 'INFO')
+		LOGGER.info(output['message'])
 
 		sys.exit(output['exitcode'])

@@ -36,7 +36,7 @@ class PowerBI ():
 		self.accesstoken =  None
 
 
-	def fetchOauth2Token (self):
+	def fetch_oauth2_token (self):
 		'''
 		'''
 
@@ -73,7 +73,7 @@ class PowerBI ():
 
 			raise ValueError('Error parsing JSON response from Microsoft OAuth2') from parseError
 	
-	def fireRefresh (self, groupID = None, reportID = None):
+	def fire_refresh (self, groupID = None, reportID = None):
 		'''
 		'''
 
@@ -132,5 +132,3 @@ class PowerBI ():
 		except Exception as fetchError:
 
 			raise ValueError('Error refreshing dataset for %s/%s' % (groupID, datasetID)) from fetchError
-	
-	

@@ -209,7 +209,7 @@ class DataFramer ():
 
 		return self._spark.read.load(fullpath, **arguments)
 
-	def toPandas (self):
+	def to_pandas (self):
 		'''
 		'''
 
@@ -223,7 +223,7 @@ class DataFramer ():
 
 		return self
 
-	def fromPandas (self, dataframe = None):
+	def from_pandas (self, dataframe = None):
 		'''
 		'''
 
@@ -239,7 +239,7 @@ class DataFramer ():
 
 		return self
 
-	def toList (self):
+	def to_list (self):
 
 		if self.dataframe:
 

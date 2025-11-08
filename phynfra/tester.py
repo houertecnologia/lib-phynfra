@@ -12,8 +12,14 @@ from phynfra.microsoft.powerbi import PowerBI
 from phynfra.google.authentication import Authentication
 from phynfra.google.drive import Drive
 from phynfra.google.mail import Mail
+from phynfra.atomic.arguments import RunArguments
 
-def tryout (settings = None):
+def tryout (**kwargs:RunArguments):
+	'''
+	'''
+
+	settings = kwargs['settings']
+	logger = kwargs['logger']
 
 	headers = {
 		'Authorization': 'Bearer x',
@@ -30,10 +36,13 @@ def tryout (settings = None):
 
 	print(r.text)
 
-def gauth (settings = None):
+def gauth (**kwargs:RunArguments):
 	'''
 	python -m phynfra --command run --module phynfra.tester.gauth
 	'''
+
+	settings = kwargs['settings']
+	logger = kwargs['logger']
 
 	sa = {
 		"type": ",
@@ -118,7 +127,10 @@ def gauth (settings = None):
 		
 		traceback.print_exc()
 
-def roda (settings = None):
+def roda (**kwargs:RunArguments):
+
+	settings = kwargs['settings']
+	logger = kwargs['logger']
 
 	#fetch
 	# inserir no redshift
@@ -169,7 +181,10 @@ def roda (settings = None):
 
 	#pbi.fetchOauth2Token()
 
-def scan (settings = None):
+def scan (**kwargs:RunArguments):
+
+	settings = kwargs['settings']
+	logger = kwargs['logger']
 
 	sss = S3('us-east-1', settings['spark.hadoop.fs.s3a.access.key'], settings['spark.hadoop.fs.s3a.secret.key'])
 
@@ -179,7 +194,10 @@ def scan (settings = None):
 
 	#print('ou', ou)
 
-def mandaeletexto(settings = None):
+def mandaeletexto(**kwargs:RunArguments):
+
+	settings = kwargs['settings']
+	logger = kwargs['logger']
 
 	sss = S3('us-east-1', settings['spark.hadoop.fs.s3a.access.key'], settings['spark.hadoop.fs.s3a.secret.key'])
 
@@ -191,7 +209,10 @@ def mandaeletexto(settings = None):
 
 	print('sauda', volta)
 
-def mandaeimagem(settings = None):
+def mandaeimagem(**kwargs:RunArguments):
+
+	settings = kwargs['settings']
+	logger = kwargs['logger']
 
 	sss = S3('us-east-1', settings['spark.hadoop.fs.s3a.access.key'], settings['spark.hadoop.fs.s3a.secret.key'])
 
@@ -211,7 +232,10 @@ def mandaeimagem(settings = None):
 
 	handler2.close()
 
-def posta (settings = None):
+def posta (**kwargs:RunArguments):
+
+	settings = kwargs['settings']
+	logger = kwargs['logger']
 
 	#verb = None, payload = None, headers = None, cookies = None, auth = None, stream = STREAM, timeout = TIMEOUT, verify = VERIFY
 
@@ -225,9 +249,12 @@ def posta (settings = None):
 
 	print(response['response'])	
 
-def hora (settings = None):
+def hora (**kwargs:RunArguments):
 	'''
 	'''
+
+	settings = kwargs['settings']
+	logger = kwargs['logger']
 
 	o = now()
 
@@ -241,7 +268,10 @@ def hora (settings = None):
 
 	print(o2)
 
-def osdataframe (settings = None):
+def osdataframe (**kwargs:RunArguments):
+
+	settings = kwargs['settings']
+	logger = kwargs['logger']
 
 	spark = Spark('roda.bat', {key:value for (key, value) in settings.items() if key.startswith('spark')})
 

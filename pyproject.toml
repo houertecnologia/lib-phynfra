@@ -39,6 +39,8 @@ pytz = "*"
 pyjwt = "*"
 cryptography = "*"
 slack_sdk = "*"
+watchtower = "^3.4.0"
+uuid7 = "^0.1.0"
 
 [tool.poetry.dev-dependencies]
 poetry = "*"

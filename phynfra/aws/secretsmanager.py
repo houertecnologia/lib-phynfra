@@ -2,7 +2,9 @@
 
 import boto3
 
-class SM:
+from botocore.config import Config
+
+class SecretsManager:
 	'''
 	'''
 
@@ -24,7 +26,7 @@ class SM:
 
 		try:
 
-			self.client = boto3.client('secretsmanager', region_name = region, aws_access_key_id = accessKey, aws_secret_access_key = secretKey)
+			self.client = boto3.client('secretsmanager', region_name = region, aws_access_key_id = accessKey, aws_secret_access_key = secretKey, config = Config(signature_version = 's3v4'))
 
 		except Exception as botoError:
 
@@ -54,3 +56,49 @@ class SM:
 		except Exception as getSecretError:
 
 			raise ValueError('Internal error when fetching "%s" from Secrets Manager' % (secret)) from getSecretError
+
+	def create (self, secret = None, value = None):
+		'''
+		secret:str - The key
+		'''
+
+		if not isinstance(secret, str) or secret == '':
+
+			raise ValueError('Secret must be a valid AWS Secrets Manager key')
+
+		if not isinstance(value, str) or value == '':
+
+			raise ValueError('Value must be string')
+
+		try:
+
+			response = self.client.create_secret(Name = secret, SecretString = value)
+
+			return self
+
+		except Exception as createSecretError:
+
+			raise ValueError('Internal error when creating "%s" in Secrets Manager' % (secret)) from createSecretError
+
+	def update (self, secret = None, value = None):
+		'''
+		secret:str - The key
+		'''
+
+		if not isinstance(secret, str) or secret == '':
+
+			raise ValueError('Secret must be a valid AWS Secrets Manager key')
+
+		if not isinstance(value, str) or value == '':
+
+			raise ValueError('Value must be string')
+
+		try:
+
+			response = self.client.put_secret_value(SecretId = secret, SecretString = value)
+
+			return self
+
+		except Exception as updateSecretError:
+
+			raise ValueError('Internal error when creating "%s" in Secrets Manager' % (secret)) from updateSecretError

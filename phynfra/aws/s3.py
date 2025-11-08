@@ -2,6 +2,8 @@
 
 import boto3
 
+from botocore.config import Config
+
 class S3:
 	'''
 	'''
@@ -24,7 +26,7 @@ class S3:
 
 		try:
 
-			self.client = boto3.client('s3', region_name = region, aws_access_key_id = accessKey, aws_secret_access_key = secretKey)
+			self.client = boto3.client('s3', region_name = region, aws_access_key_id = accessKey, aws_secret_access_key = secretKey, config = Config(signature_version = 's3v4'))
 
 		except Exception as botoError:
 

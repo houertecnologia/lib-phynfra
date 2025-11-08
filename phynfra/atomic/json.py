@@ -2,7 +2,7 @@
 
 import json
 
-def recursiveObjectFlatten (source = None, parent = '', separator = '.'):
+def recursive_object_flatten (source = None, parent = '', separator = '.'):
 	'''
 	Inner function
 	'''
@@ -21,13 +21,13 @@ def recursiveObjectFlatten (source = None, parent = '', separator = '.'):
 
 			if isinstance(value, dict):
 
-				output.update(recursiveObjectFlatten(value, composedkey, separator = separator))
+				output.update(recursive_object_flatten(value, composedkey, separator = separator))
 
 			elif isinstance(value, list):
 
 				for (i, item) in enumerate(value):
 
-					output.update(recursiveObjectFlatten(item, f"{composedkey}{separator}{i}", separator = separator))
+					output.update(recursive_object_flatten(item, f"{composedkey}{separator}{i}", separator = separator))
 
 			else:
 
@@ -61,8 +61,8 @@ def flatten (source = None, parent = '', separator = '.'):
 
 		if isinstance(data, dict):
 
-			return recursiveObjectFlatten(data, parent = parent, separator = separator)
+			return recursive_object_flatten(data, parent = parent, separator = separator)
 
 		elif isinstance(data, list):
 
-			return [recursiveObjectFlatten(r, parent = parent, separator = separator) for r in data]
+			return [recursive_object_flatten(r, parent = parent, separator = separator) for r in data]
