@@ -1,6 +1,6 @@
 import logging
 import sys
-import watchtower
+#import watchtower
 import boto3
 
 from uuid_extensions import uuid7str
@@ -28,7 +28,7 @@ class ColorFormatter (logging.Formatter):
 
 		color = COLORS.get(record.levelname.upper(), 'DEBUG')
 
-		record.levelname = f'{color}{record.levelname}{COLORS.get('RESET')}
+		record.levelname = f'{color}{record.levelname}{COLORS.get('RESET')}'
 
 		return super().format(record)
 
@@ -79,7 +79,7 @@ class Logger:
 			filename = '%s.log' % NAME,
 			when = 'midnight',
 			interval = 1,
-			backCount = 30,
+			backupCount = 30,
 			encoding = 'utf-8',
 			utc = True
 		)
