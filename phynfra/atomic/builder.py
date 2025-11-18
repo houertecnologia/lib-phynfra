@@ -1,0 +1,135 @@
+import os
+import sys
+import subprocess
+
+from importlib import resources
+from pathlib import Path
+from phynfra.atomic.arguments import RunArguments
+from phynfra.atomic.utils import is_string, slug
+from phynfra.aws.s3 import S3
+
+ENTRYPOINT = resources.files("phynfra.boilerplate").joinpath("entrypoint.py").read_text()
+
+PYPROJECT = resources.files("phynfra.boilerplate").joinpath("pyproject.toml").read_text()
+
+KEYS = [
+	'name',
+	'project',
+	's3',
+	'version'
+]
+
+ENVIRONMENT = [
+	'AWS_ACCESS_KEY_ID',
+	'AWS_SECRET_ACCESS_KEY',
+	'AWS_REGION_NAME',
+	'AWS_DEFAULT_BUCKET'
+]
+
+def build(**kwargs:RunArguments):
+	'''
+	kwargs['settings']: OrderedDict
+	kwargs['logger']: phynfra.atomic.logger.Logger
+	kwargs['extra']: dict
+
+	extra['project']:str - Project root folder (path)
+	extra['s3']:str - S3 Bucket and prefix for this build
+	extra['version']:str - Package version
+
+	Build the current application that hosts phynfra with a .whl
+	adding pyproject.toml (if necessary) and uploads to s3, rewriting
+	if version exists
+
+	python -m phynfra --command run --configuration /path/to/.env --module phynfra.atomic.builder.build
+	'''
+
+	LOGGER = kwargs['logger']
+
+	if not kwargs['extra']:
+
+		LOGGER.error('Cannot build a package without extra arguments')
+
+		return
+
+	allset = all([x in kwargs['extra'] and is_string(kwargs['extra'][x]) for x in KEYS])
+
+	if not allset:
+
+		LOGGER.error('All --extra arguments should informed using command line - %s' % ', '.join(KEYS))
+
+		return
+
+	allset = all([x in kwargs['settings'] and is_string(kwargs['settings'][x]) for x in ENVIRONMENT])
+
+	if not allset:
+
+		LOGGER.error('All AWS variables to upload to S3 should be present in settings - %s' % ', '.join(ENVIRONMENT))
+
+		return
+
+	root = Path(kwargs['extra']['project'])
+
+	targetfile = root / "pyproject.toml"
+
+	if not targetfile.exists():
+		
+		pyproject = str(PYPROJECT).replace('{{version}}', kwargs['extra']['version']) 
+		pyproject = pyproject.replace('{{name}}', kwargs['extra']['name'])
+		
+		targetfile.write_text(pyproject)
+
+		#subprocess.check_call(['git', 'add', str(targetfile)])
+		#subprocess.check_call(['git', 'commit', '-m', 'pyproject.toml added by phynfra to allow building the project'])
+
+	targetfile = root / "entrypoint.py"
+
+	entrypoint = None
+
+	if not targetfile.exists():
+		
+		entrypoint = str(ENTRYPOINT).replace('{{pythonpath}}', 'ssss') 
+		
+		targetfile.write_text(entrypoint)
+
+		#subprocess.check_call(['git', 'add', str(targetfile)])
+		#subprocess.check_call(['git', 'commit', '-m', 'entrypoint.py added by phynfra to be the entrypoint for Spark / EMRServerless'])
+
+	else:
+
+		handler = open(str(targetfile), 'r', encoding = 'utf-8')
+
+		entrypoint = handler.read()
+
+		handler.close()
+
+	dist = root / "dist"
+	
+	if not dist.exists():
+		
+		dist.mkdir()
+
+	subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'build'])
+	subprocess.check_call([sys.executable, '-m', 'build'], cwd = root)
+
+	wheel = next(dist.glob("*.whl"))
+
+	return
+
+	client = S3(kwargs['settings']['AWS_DEFAULT_REGION'], kwargs['settings']['AWS_ACCESS_KEY_ID'], kwargs['settings']['AWS_SECRET_ACCESS_KEY'])
+
+	sluggedname = slug(name)
+
+	outputwheel = client.write(bucket = kwargs['settings']['AWS_DEFAULT_BUCKET'], payload = wheel, public = False, contentType = 'application/x-wheel+zip', contentDisposition = None, keyPrefix = '%s/%s-%s-py3-none-any.whl' % (
+		sluggedname,
+		sluggedname,
+		version
+	))
+
+	print(outputwheel)
+
+	outputentrypoint = client.write(bucket = kwargs['settings']['AWS_DEFAULT_BUCKET'], payload = entrypoint, public = False, contentType = 'text/x-python', contentDisposition = None, keyPrefix = '%s/entrypoint.py' % (
+		sluggedname
+	))
+
+	print(outputentrypoint)
+

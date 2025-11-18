@@ -14,7 +14,7 @@ REGEX_MODULE = r'[0-9a-zA-Z_]+(\.[0-9a-zA-Z_]+)*'
 
 LOGGER = Logger()
 
-def run (configuration = None, module = None):
+def run (configuration = None, module = None, extra = None):
 	'''
 	Imports a module dynamically and run its function
 	configuration:dict - python-dotenv to dict
@@ -55,7 +55,7 @@ def run (configuration = None, module = None):
 
 				try:
 
-					function(settings = configuration, logger = LOGGER)
+					function(settings = configuration, logger = LOGGER, extra = extra)
 
 					return {'message': '%s executed successfully' % (modulepath), 'exitcode': 0}
 
@@ -128,9 +128,30 @@ if __name__ == '__main__':
 	# (Override) Extra args for --command create
 	parser.add_argument('--destination', type = str, required = False)
 
+	# Extra Arguments
+	parser.add_argument('--extra', nargs = '*', default = [])
+
 	arguments = parser.parse_args()
 
 	configuration = None
+
+	# Transforming "EXTRA" arguments in a **kwargs
+
+	extra = {}
+
+	try:
+
+		for pair in arguments.extra:
+
+			key, value = pair.split('=', 1)
+
+			extra[key] = value
+
+	except Exception as parseError:
+
+		LOGGER.error('Fail to execute phynfra bootstrap - Failures in extra data. Check the attributes. The pattern is key=value. Error: %s' % str(parseError))
+
+		sys.exit(1)
 
 	if arguments.configuration and os.path.exists(arguments.configuration):
 
@@ -139,6 +160,8 @@ if __name__ == '__main__':
 		load_dotenv(arguments.configuration)
 
 		LOGGER.info('Executing with data from %s' % arguments.configuration)
+
+		# TODO: add argument to merge with os.environ, in which direction
 
 	else:
 
@@ -156,7 +179,7 @@ if __name__ == '__main__':
 
 		try:
 
-			output = run(configuration = configuration, module = arguments.module)
+			output = run(configuration = configuration, module = arguments.module, extra = extra)
 
 			LOGGER.info(output['message'])
 

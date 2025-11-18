@@ -45,5 +45,8 @@ uuid7 = "^0.1.0"
 [tool.poetry.dev-dependencies]
 poetry = "*"
 
+[tool.poetry.package]
+include = ["phynfra/boilerplate/*"]
+
 # python -m phynfra --command run --configuration /Volumes/Data/Houer/my-phynfra/.env --module phynfra.aws.s3.read
 # python -m phynfra --command run --configuration /Volumes/Data/Houer/my-phynfra/.env --module phynfra.apache.spark.roda
