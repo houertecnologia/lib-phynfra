@@ -17,7 +17,11 @@ def main ():
 	NOTE: the os.environ IS the --spark.(driver|executor)Env.X=y - Every var sete in spark-submit will be visible here
 	RECOMENDATION: These vars should be in Airflow as "Variable" or secrets manager.
 
+	docker run -d --name spark -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION --network lordshark apache/spark:3.5.7 sleep infinity
+
 	spark-submit s3://your-bucket/wheels/yourproject.whl --entrypoint entrypoint.py --module test --settings s3://.../settings.json --other args...
+
+	aws emr-serverless start-job-run --application-id <app-id> --execution-role-arn arn:aws:iam::<account>:role/emr-serverless-exec-role --job-driver '{"sparkSubmit": {"entryPoint": "s3://my-artifacts/jobs/main_etl.py", "sparkSubmitParameters": "--py-files s3://my-artifacts/project-0.1.0-py3-none-any.whl"}}' --name "test-emr-job"
 
 	EMRServerlessOperator(
 		task_id="run_test",

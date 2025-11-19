@@ -111,23 +111,27 @@ def build(**kwargs:RunArguments):
 	subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'build'])
 	subprocess.check_call([sys.executable, '-m', 'build'], cwd = root)
 
-	wheel = next(dist.glob("*.whl"))
+	wheel = None
 
-	return
+	handler = open(next(dist.glob("*.whl")), 'rb')
+
+	wheel = handler.read()
+
+	handler.close()
 
 	client = S3(kwargs['settings']['AWS_DEFAULT_REGION'], kwargs['settings']['AWS_ACCESS_KEY_ID'], kwargs['settings']['AWS_SECRET_ACCESS_KEY'])
 
-	sluggedname = slug(name)
+	sluggedname = slug(kwargs['extra']['name'])
 
-	outputwheel = client.write(bucket = kwargs['settings']['AWS_DEFAULT_BUCKET'], payload = wheel, public = False, contentType = 'application/x-wheel+zip', contentDisposition = None, keyPrefix = '%s/%s-%s-py3-none-any.whl' % (
+	outputwheel = client.write(bucket = kwargs['settings']['AWS_DEFAULT_BUCKET'], payload = wheel, public = False, contentType = 'application/x-wheel+zip', keyPrefix = '%s/%s-%s-py3-none-any.whl' % (
 		sluggedname,
 		sluggedname,
-		version
+		kwargs['extra']['version']		 
 	))
 
 	print(outputwheel)
 
-	outputentrypoint = client.write(bucket = kwargs['settings']['AWS_DEFAULT_BUCKET'], payload = entrypoint, public = False, contentType = 'text/x-python', contentDisposition = None, keyPrefix = '%s/entrypoint.py' % (
+	outputentrypoint = client.write(bucket = kwargs['settings']['AWS_DEFAULT_BUCKET'], payload = entrypoint, public = False, contentType = 'text/x-python', keyPrefix = '%s/entrypoint.py' % (
 		sluggedname
 	))
 
