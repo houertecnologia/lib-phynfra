@@ -14,6 +14,8 @@ class Spark ():
 	'''
 	Spark Class
 	Manages SparkSession
+	SparkSession is to run code inside the container to reach "datanode", to query and write data
+	spark-submit is not runnable from this class. It requires spark-cli installed in local machine
 	'''
 	
 	def __init__ (self, application, configuration = None, level = 'WARN'):

@@ -15,6 +15,23 @@ readme = {file = "readme.md", content-type =  "text/markdown"}
 requires-python = ">=3.9"
 license = {file = "license.txt"}
 version = "0.0.1"
+dependencies = [
+    "boto3",
+    "deltalake",
+    "delta-spark",
+    "openpyxl",
+    "pandas",
+    "python-dotenv",
+    "pyspark>=3.5,<4.0",
+    "requests",
+    "pytz",
+    "pyjwt",
+    "cryptography",
+    "slack_sdk",
+    "watchtower>=3.4.0,<4.0.0",
+    "uuid7>=0.1.0,<0.2.0",
+    "pyyaml>=6.0,<7.0"
+]
 
 [project.scripts]
 phynfra = "phynfra.__main__:main"
@@ -48,6 +65,3 @@ poetry = "*"
 
 [[tool.poetry.include]]
 path = "phynfra/boilerplate/*"
-
-# python -m phynfra --command run --configuration /Volumes/Data/Houer/my-phynfra/.env --module phynfra.aws.s3.read
-# python -m phynfra --command run --configuration /Volumes/Data/Houer/my-phynfra/.env --module phynfra.apache.spark.roda

@@ -26,6 +26,34 @@ ENVIRONMENT = [
 	'AWS_DEFAULT_BUCKET'
 ]
 
+def scan (root):
+	'''
+	root:str - The root folder of a python project
+	'''
+
+	packages = []
+	modules = []
+
+	if os.path.exists(os.path.join(root, '__init__.py')):
+
+		packages.append('"%s"' % os.path.basename(root))
+
+	for name in os.listdir(root):
+	
+		path = os.path.join(root, name)
+
+		if os.path.isdir(path) and os.path.isfile(os.path.join(path, "__init__.py")):
+			# package = directory containing __init__.py
+	
+			packages.append('"%s"' % name)
+
+		elif os.path.isfile(path) and name.endswith(".py") and name != "__init__.py":
+			# module = .py file (excluding __init__.py)
+	
+			modules.append('"%s"' % name[:-3])
+
+	return packages, modules
+
 def build(**kwargs:RunArguments):
 	'''
 	kwargs['settings']: OrderedDict
@@ -73,11 +101,32 @@ def build(**kwargs:RunArguments):
 
 	if not targetfile.exists():
 		
+		pipoutput = subprocess.check_output(["pip", "freeze"]).decode().strip().split("\n")
+
+		dependencies = []
+		
+		for line in pipoutput:
+		
+			if "@" in line: # skip vcs installs
+			
+				continue
+		
+			if line.startswith("-"):
+		
+				continue
+		
+			dependencies.append('"%s"' % line)
+
+		packages, modules = scan(kwargs['extra']['project'])
+
 		pyproject = str(PYPROJECT).replace('{{version}}', kwargs['extra']['version']) 
 		pyproject = pyproject.replace('{{name}}', kwargs['extra']['name'])
+		pyproject = pyproject.replace('{{dependencies}}', ', '.join(dependencies))
+		pyproject = pyproject.replace('{{modules}}', ', '.join(modules))
 		
 		targetfile.write_text(pyproject)
 
+		#pyproject = pyproject.replace('{{packages}}', ', '.join(packages))
 		#subprocess.check_call(['git', 'add', str(targetfile)])
 		#subprocess.check_call(['git', 'commit', '-m', 'pyproject.toml added by phynfra to allow building the project'])
 
