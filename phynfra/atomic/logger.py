@@ -28,10 +28,13 @@ class ColorFormatter (logging.Formatter):
 
 		color = COLORS.get(record.levelname.upper(), 'DEBUG')
 
-		record.levelname = f'{color}{record.levelname}{COLORS.get('RESET')}'
+		record.levelname = '%s%s%s' % (
+			color,
+			record.levelname,
+			COLORS.get('RESET')
+		)
 
 		return super().format(record)
-
 
 DEFAULT_FACTORY = logging.getLogRecordFactory()
 

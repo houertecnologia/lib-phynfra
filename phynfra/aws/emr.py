@@ -79,7 +79,7 @@ class Serverless:
 
 			settings = settings + '--conf %s=%s ' % (key, value)
 		
-		settings = settings + '--py-files=%s' % entrypoint
+		settings = settings + '--py-files=%s' % files
 
 		arguments = []
 
