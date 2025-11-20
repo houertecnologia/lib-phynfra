@@ -9,7 +9,7 @@ DIRETORIO=""
 mkdir $DIRETORIO && cd $DIRETORIO
 python3 -m virtualenv venv
 source venv/bin/activate
-pip install poetry
+pip install poetry build
 poetry init || touch pyproject.toml
 ```
 
@@ -29,6 +29,24 @@ pip install -e /path/to/phynfra/clone/folder
 
 ```bash
 pip install -e git+https://github.com/houertecnologia/lib-phynfra.git@v3.0#egg=phynfra
+```
+
+## Build
+
+Precisa-se de 2 builds do Phynfra - O próprio .whl e também todas as dependências que estão atreladas a ele, ou seja, todas as dependências do `[tool.poetry.dependencies]` devem ser instaladas em um ambiente virtual e devidamente compactadas para serem publicadas no S3. Ressalta-se, então, que o build do lib-phynfra e sua atualização no S3 são fundamentais a cada atualização de versão, ou seja, o lib-phynfra precisa de um bucket específico como se fosse um ECR.
+
+> Nota: o lib-phynfra está desenhado para **python>=3.9**, ou seja, o EMR Serverless precisa ser compatível com isso. Os testes foram feito com o EMR **`emr-7.11.0 x86_64`**.
+
+```bash
+# Building phynfra-0.0.0-py3-none-any.whl
+python -m build
+# Building phynfra-0.0.0-py3-none-any-dependencies.zip
+python3 -m venv build-env
+source build-env/bin/activate
+pip install -e .
+cd build-env/lib/python*/site-packages
+zip -r9 /path/to/phynfra/root/dist/phynfra-0.0.0-py3-none-any-dependencies.zip .
+# ... and upload to S3 alongside .whl
 ```
 
 ## Execução

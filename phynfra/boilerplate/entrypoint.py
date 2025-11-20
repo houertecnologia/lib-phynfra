@@ -3,6 +3,8 @@ import importlib
 import json
 import traceback
 import sys
+import re
+import os
 
 REGEX_MODULE = r'[0-9a-zA-Z_]+(\.[0-9a-zA-Z_]+)*'
 

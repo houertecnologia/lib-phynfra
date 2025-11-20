@@ -10,8 +10,7 @@ name = "phynfra"
 authors = ["Jaime Daniel Corrêa Mendes <jaimedaniel@houer.com.br>"]
 description = "Phynfra - Python Houer Infraestructure"
 readme = "readme.md"
-#requires-python = ">=3.9"
-#license = {file = "license.txt"}
+license = "Owner"
 version = "3.0.0"
 
 [tool.poetry.scripts]
@@ -40,3 +39,6 @@ poetry = "*"
 
 [[tool.poetry.include]]
 path = "phynfra/boilerplate/*"
+
+[[tool.poetry.include]]
+path = "license.txt"
