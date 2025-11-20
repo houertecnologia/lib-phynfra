@@ -5,60 +5,35 @@
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[project]
-name = "phynfra"
-authors = [
-	{name = "Jaime Daniel Corrêa Mendes", email = "jaimedaniel@houer.com.br"}
-]
-description = "Phynfra - Python Houer Infraestructure"
-readme = {file = "readme.md", content-type =  "text/markdown"}
-requires-python = ">=3.9"
-license = {file = "license.txt"}
-version = "0.0.1"
-dependencies = [
-    "boto3",
-    "deltalake",
-    "delta-spark",
-    "openpyxl",
-    "pandas",
-    "python-dotenv",
-    "pyspark>=3.5,<4.0",
-    "requests",
-    "pytz",
-    "pyjwt",
-    "cryptography",
-    "slack_sdk",
-    "watchtower>=3.4.0,<4.0.0",
-    "uuid7>=0.1.0,<0.2.0",
-    "pyyaml>=6.0,<7.0"
-]
-
-[project.scripts]
-phynfra = "phynfra.__main__:main"
-
 [tool.poetry]
 name = "phynfra"
-version = "0.0.1"
-description = "Phynfra - Python Houer Infraestructure"
 authors = ["Jaime Daniel Corrêa Mendes <jaimedaniel@houer.com.br>"]
+description = "Phynfra - Python Houer Infraestructure"
+readme = "readme.md"
+#requires-python = ">=3.9"
+#license = {file = "license.txt"}
+version = "3.0.0"
+
+[tool.poetry.scripts]
+phynfra = "phynfra.__main__:main"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9"
 boto3 = "*"
 deltalake = "*"
 delta-spark = "*"
 openpyxl = "*"
 pandas = "*"
 python-dotenv = "*"
-pyspark = "^3.5"
+pyspark = ">=3.5,<4.0"
 requests = "*"
 pytz = "*"	
 pyjwt = "*"
 cryptography = "*"
 slack_sdk = "*"
-watchtower = "^3.4.0"
-uuid7 = "^0.1.0"
-pyyaml = "^6.0"
+watchtower = ">=3.4.0,<4.0.0"
+uuid7 = ">=0.1.0,<0.2.0"
+pyyaml = ">=6.0,<7.0"
 
 [poetry.group.dev.dependencies]
 poetry = "*"
