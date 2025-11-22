@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+import boto3
 
 from phynfra.atomic.utils import is_not_string, is_not_list
 from phynfra.apache.spark import DataFramer
@@ -120,7 +121,7 @@ class Glue ():
 
 		try:
 
-			self.client = boto3.client('glue', region_name = region, aws_access_key_id = accessKey, aws_secret_access_key = secretKey, config = Config(signature_version = 's3v4'))
+			self.client = boto3.client('glue', region_name = region, aws_access_key_id = accessKey, aws_secret_access_key = secretKey)
 
 		except Exception as botoError:
 
@@ -149,7 +150,6 @@ class Glue ():
 			self.client.create_database(DatabaseInput = {
 				"Name": name,
 				"Description": description
-				"Description": description
 			})
 
 			return self
@@ -171,7 +171,7 @@ class Glue ():
 
 			raise ValueError('To save a Glue table, you must provide the table name')
 
-		else if storagetype not in STORAGE:
+		elif storagetype not in STORAGE:
 
 			raise ValueError('%s is not a valid storage type - Acceptables: %s' % ', '.join(STORAGE.keys()))
 		
@@ -190,13 +190,13 @@ class Glue ():
 			"TableType": "EXTERNAL_TABLE",
 			"Parameters": settings['Parameters'],
 			"StorageDescriptor": {
-				"Location": None,
-				"Columns": None,
+				"Location": location,
+				"Columns": columns,
 				"InputFormat": settings['InputFormat'],
 				"OutputFormat": settings['OutputFormat'],
-				"SerdeInfo": settings['SedeInfo']
+				"SerdeInfo": settings['SerdeInfo']
 			},
-			"PartitionsKeys": None
+			"PartitionKeys": None
 		}
 
 		if extra != None and isinstance(extra, dict):
@@ -215,7 +215,7 @@ class Glue ():
 
 				raise RuntimeError('Partitions type are wrong. Fix then')
 
-			table['PartitionsKeys'] = partitions
+			table['PartitionKeys'] = partitions
 
 		try:
 			
@@ -253,9 +253,17 @@ class Glue ():
 
 		columns = []
 
+		excludes = []
+
+		if len(partitions) > 0:
+
+			excludes = [p['Name'] for p in partitions]
+
 		for f in df.schema.fields:
 
 			columntype = f.dataType.simpleString()
+
+			#print(f.dataType, f.dataType.simpleString())
 
 			valid = any([re.match(p, columntype) for p in COLUMNS])
 
@@ -265,9 +273,11 @@ class Glue ():
 
 			else:
 
-				columns.append({
-					"Name": f.name,
-					"Type": columntype
-				})
+				if f.name not in excludes:
+
+					columns.append({
+						"Name": f.name,
+						"Type": columntype
+					})
 
 		return self.save_table(database, name, storagetype, location, columns, partitions, extra)
