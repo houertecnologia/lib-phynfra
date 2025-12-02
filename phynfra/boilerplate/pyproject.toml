@@ -8,10 +8,6 @@ version = "{{version}}"
 requires-python = ">=3.9"
 dependencies = [{{dependencies}}]
 
-#[tool.setuptools]
-#packages = [{{packages}}]
-#py_modules = [{{modules}}]
-
 [tool.setuptools]
 package-dir = {"" = "."}
 py-modules = [{{modules}}]

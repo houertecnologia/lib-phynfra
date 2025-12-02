@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+import shutil
 
 from importlib import resources
 from pathlib import Path
@@ -25,6 +26,32 @@ ENVIRONMENT = [
 	'AWS_REGION_NAME',
 	'AWS_DEFAULT_BUCKET'
 ]
+
+def get_packages():
+	'''
+	'''
+
+	if not (getattr(sys, 'base_prefix', sys.prefix) != sys.prefix or getattr(sys, 'real_prefix', None)):
+
+		return None
+
+	for path in sys.path:
+
+		p = Path(path)
+
+		if p.name == 'site-packages' and p.exists():
+		
+			try:
+			
+				p.relative_to(sys.prefix)
+			
+				return p
+
+			except ValueError:
+
+				continue
+
+	return None
 
 def scan (root):
 	'''
@@ -68,7 +95,7 @@ def build(**kwargs:RunArguments):
 	adding pyproject.toml (if necessary) and uploads to s3, rewriting
 	if version exists
 
-	python -m phynfra --command run --configuration /path/to/.env --module phynfra.atomic.builder.build
+	python -m phynfra --command run --configuration /path/to/.env --module phynfra.atomic.builder.build --extra name=example-phynfra project=/path/to s3=s3://bucket/prefix version=1.0.0
 	'''
 
 	LOGGER = kwargs['logger']
@@ -95,8 +122,14 @@ def build(**kwargs:RunArguments):
 
 		return
 
-	root = Path(kwargs['extra']['project'])
+	if shutil.which('zip') is None:
 
+		LOGGER.error('Cannot use phynfra build command. You must have a zip command in PATH to be called.')
+
+		return
+
+	root = Path(kwargs['extra']['project'])
+	
 	targetfile = root / "pyproject.toml"
 
 	if not targetfile.exists():
@@ -136,7 +169,7 @@ def build(**kwargs:RunArguments):
 
 	if not targetfile.exists():
 		
-		entrypoint = str(ENTRYPOINT).replace('{{pythonpath}}', 'ssss') 
+		entrypoint = str(ENTRYPOINT)
 		
 		targetfile.write_text(entrypoint)
 
@@ -178,11 +211,30 @@ def build(**kwargs:RunArguments):
 		kwargs['extra']['version']		 
 	))
 
-	print(outputwheel)
-
 	outputentrypoint = client.write(bucket = kwargs['settings']['AWS_DEFAULT_BUCKET'], payload = entrypoint, public = False, contentType = 'text/x-python', keyPrefix = '%s/entrypoint.py' % (
 		sluggedname
 	))
 
-	print(outputentrypoint)
+	# Zipping...
 
+	zipfile = str(root / dist / '%s-%s-py3.zip') % (sluggedname, kwargs['extra']['version'])
+
+	subprocess.run(["zip", "-r9", zipfile, "."], cwd = get_packages(), check = True)
+
+	handler = open(zipfile, 'rb')
+
+	zipbytes = handler.read()
+
+	handler.close()
+
+	outputzipfile = client.write(bucket = kwargs['settings']['AWS_DEFAULT_BUCKET'], payload = zipbytes, public = False, contentType = 'application/zip', keyPrefix = '%s/%s-%s-py3.zip' % (
+		sluggedname,
+		sluggedname,
+		kwargs['extra']['version']		 
+	))
+
+	# Printing....
+
+	print(outputwheel)
+	print(outputentrypoint)
+	print(outputzipfile)
