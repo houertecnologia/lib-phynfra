@@ -16,7 +16,6 @@ PYPROJECT = resources.files("phynfra.boilerplate").joinpath("pyproject.toml").re
 KEYS = [
 	'name',
 	'project',
-	's3',
 	'version'
 ]
 
@@ -87,15 +86,16 @@ def build(**kwargs:RunArguments):
 	kwargs['logger']: phynfra.atomic.logger.Logger
 	kwargs['extra']: dict
 
-	extra['project']:str - Project root folder (path)
-	extra['s3']:str - S3 Bucket and prefix for this build
-	extra['version']:str - Package version
+	extra['project']:str* - Project root folder (path)
+	extra['prefix']:str - prefix path - no slashes in the beggining or in the end - Allow null to the bucket root
+	extra['version']:str* - Package version
+	extra['skip']:str - Skip zip build - Check for key and values - true, True, 1, yes, ok, t
 
 	Build the current application that hosts phynfra with a .whl
 	adding pyproject.toml (if necessary) and uploads to s3, rewriting
 	if version exists
 
-	python -m phynfra --command run --configuration /path/to/.env --module phynfra.atomic.builder.build --extra name=example-phynfra project=/path/to s3=s3://bucket/prefix version=1.0.0
+	python -m phynfra --command run --configuration /path/to/.env --module phynfra.atomic.builder.build --extra name=example-phynfra project=/path/to prefix=path/to/prefix version=1.0.0
 	'''
 
 	LOGGER = kwargs['logger']
@@ -205,33 +205,67 @@ def build(**kwargs:RunArguments):
 
 	sluggedname = slug(kwargs['extra']['name'])
 
-	outputwheel = client.write(bucket = kwargs['settings']['AWS_DEFAULT_BUCKET'], payload = wheel, public = False, contentType = 'application/x-wheel+zip', keyPrefix = '%s/%s-%s-py3-none-any.whl' % (
-		sluggedname,
-		sluggedname,
-		kwargs['extra']['version']		 
-	))
+	whlfilename = '%s-%s-py3-none-any.whl' % (sluggedname, kwargs['extra']['version'])
 
-	outputentrypoint = client.write(bucket = kwargs['settings']['AWS_DEFAULT_BUCKET'], payload = entrypoint, public = False, contentType = 'text/x-python', keyPrefix = '%s/entrypoint.py' % (
-		sluggedname
-	))
+	whlfullpath = None
+
+	if ('prefix' not in kwargs['extra']) or (kwargs['extra']['prefix'] == ''):
+
+		whlfullpath = whlfilename
+
+	else:
+
+		whlfullpath = '%s/%s' % (kwargs['extra']['prefix'].lstrip('/').rstrip('/'), whlfilename)
+
+	outputwheel = client.write(bucket = kwargs['settings']['AWS_DEFAULT_BUCKET'], payload = wheel, public = False, contentType = 'application/x-wheel+zip', keyPrefix = whlfullpath)
+
+	pyfilename = 'entrypoint.py'
+
+	pyfullpath = None
+
+	if ('prefix' not in kwargs['extra']) or (kwargs['extra']['prefix'] == ''):
+
+		pyfullpath = pyfilename
+
+	else:
+
+		pyfullpath = '%s/%s' % (kwargs['extra']['prefix'].lstrip('/').rstrip('/'), pyfilename)
+	
+	outputentrypoint = client.write(bucket = kwargs['settings']['AWS_DEFAULT_BUCKET'], payload = entrypoint, public = False, contentType = 'text/x-python', keyPrefix = pyfullpath)
 
 	# Zipping...
 
-	zipfile = str(root / dist / '%s-%s-py3.zip') % (sluggedname, kwargs['extra']['version'])
+	outputzipfile = None
 
-	subprocess.run(["zip", "-r9", zipfile, "."], cwd = get_packages(), check = True)
+	if ('skip' in kwargs['extra']) and (kwargs['extra']['skip'] in ['True', 'true', '1', 'yes', 'ok', 't']):
 
-	handler = open(zipfile, 'rb')
+		outputzipfile = '[SKIPPED]'
 
-	zipbytes = handler.read()
+	else:
 
-	handler.close()
+		zipfile = str(root / dist / '%s-%s-py3.zip') % (sluggedname, kwargs['extra']['version'])
 
-	outputzipfile = client.write(bucket = kwargs['settings']['AWS_DEFAULT_BUCKET'], payload = zipbytes, public = False, contentType = 'application/zip', keyPrefix = '%s/%s-%s-py3.zip' % (
-		sluggedname,
-		sluggedname,
-		kwargs['extra']['version']		 
-	))
+		subprocess.run(["zip", "-r9", zipfile, "."], cwd = get_packages(), check = True)
+
+		handler = open(zipfile, 'rb')
+
+		zipbytes = handler.read()
+
+		handler.close()
+
+		zipfilename = '%s-%s-py3.zip' % (sluggedname, kwargs['extra']['version'])
+
+		zipfullpath = None
+
+		if ('prefix' not in kwargs['extra']) or (kwargs['extra']['prefix'] == ''):
+
+			zipfullpath = zipfilename
+
+		else:
+
+			zipfullpath = '%s/%s' % (kwargs['extra']['prefix'].lstrip('/').rstrip('/'), zipfilename)
+
+		outputzipfile = client.write(bucket = kwargs['settings']['AWS_DEFAULT_BUCKET'], payload = zipbytes, public = False, contentType = 'application/zip', keyPrefix = zipfullpath)
 
 	# Printing....
 

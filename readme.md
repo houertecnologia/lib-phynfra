@@ -37,6 +37,8 @@ Precisa-se de 2 builds do Phynfra - O próprio .whl e também todas as dependên
 
 > Nota: o lib-phynfra está desenhado para **python>=3.9**, ou seja, o EMR Serverless precisa ser compatível com isso. Os testes foram feito com o EMR **`emr-7.11.0 x86_64`**.
 
+O build do phynfra pode ser feito diretamente, como no script abaixo ou pelo próprio builder do phynfra, informando se deseja incluir as dependências ou não, com o parâmetro `skip` dos argumentos extra.
+
 ```bash
 # Building phynfra-0.0.0-py3-none-any.whl
 python -m build
@@ -47,6 +49,10 @@ pip install -e .
 cd build-env/lib/python*/site-packages
 zip -r9 /path/to/phynfra/root/dist/phynfra-0.0.0-py3-none-any-dependencies.zip .
 # ... and upload to S3 alongside .whl
+```
+
+```bash
+python -m phynfra --command run --configuration ./.env --module phynfra.atomic.builder.build --extra name='phynfra' project="$(pwd)" version='3.0.0' skip='true'
 ```
 
 ## Execução
