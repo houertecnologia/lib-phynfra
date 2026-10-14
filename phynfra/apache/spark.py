@@ -3,6 +3,7 @@
 import os
 
 from pyspark.sql import SparkSession, functions as F
+from pyspark.sql.functions import isnan
 from pyspark.sql.window import Window
 from pyspark.sql.utils import AnalysisException
 
@@ -899,6 +900,78 @@ class DataFramer ():
 			self.dataframe = resultDataFrame
 
 			return self
+
+		except Exception as error:
+
+			raise error
+
+	def statistics (self, metric: str = 'empty', columns = None, dataframe: SparkDataFrame = None) -> dict:
+		'''
+		Extracts data quality metrics for the specified columns
+		metric:str - Quality metric to compute (supported: 'empty')
+		columns:list|str - Columns to evaluate (defaults to all columns)
+		dataframe:SparkDataFrame - Target DataFrame (defaults to self.dataframe)
+		'''
+
+		targetDataFrame = dataframe if isinstance(dataframe, SparkDataFrame) else self.dataframe
+
+		if not targetDataFrame:
+
+			raise ValueError('Cannot compute statistics: DataFramer has no active DataFrame')
+
+		if (not metric) or (metric.lower() != 'empty'):
+
+			raise ValueError("Metric '%s' is not supported. Supported metrics: ['empty']" % metric)
+
+		if columns is None:
+
+			targetColumns = list(targetDataFrame.columns)
+
+		elif isinstance(columns, str):
+
+			targetColumns = [columns.strip()]
+
+		elif isinstance(columns, (list, tuple)):
+
+			targetColumns = [str(c).strip() for c in columns if str(c).strip()]
+
+		else:
+
+			raise ValueError('columns must be a string or list/tuple of strings!')
+
+		try:
+
+			totalRows = targetDataFrame.count()
+
+			dtypesDict = dict(targetDataFrame.dtypes)
+
+			aggExprs = [
+				F.count(F.when(
+					F.col(c).isNull() |
+					(isnan(F.col(c)) if dtypesDict.get(c) in ['double', 'float'] else F.lit(False)) |
+					(F.trim(F.col(c).cast('string')) == '') |
+					(F.lower(F.col(c).cast('string')).isin('null', 'none')),
+					True
+				)).alias(c)
+				for c in targetColumns
+			]
+
+			aggResult = targetDataFrame.select(*aggExprs).collect()[0].asDict()
+
+			metricsResult = {}
+
+			for c in targetColumns:
+
+				countValue = aggResult.get(c, 0)
+
+				percentage = round((countValue / totalRows) * 100, 2) if totalRows > 0 else 0.0
+
+				metricsResult[c] = {
+					'count': countValue,
+					'percentage': percentage
+				}
+
+			return metricsResult
 
 		except Exception as error:
 
