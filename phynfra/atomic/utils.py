@@ -39,3 +39,25 @@ def slug(value):
 	s = re.sub(r"-{2,}", "-", s)
 	
 	return s.strip("-")
+
+def sanitize (value: str) -> str:
+	'''
+	Converts text to ASCII, removes accents, replaces non-alphanumeric chars with underscore,
+	forces lowercase, collapses multiple underscores and trims edges
+	'''
+
+	if not value:
+
+		return ''
+
+	s = unicodedata.normalize('NFKD', str(value))
+
+	s = s.encode('ascii', 'ignore').decode('ascii')
+
+	s = s.lower()
+
+	s = re.sub(r'[^a-z0-9]+', '_', s)
+
+	s = re.sub(r'_+', '_', s)
+
+	return s.strip('_')

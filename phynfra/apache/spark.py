@@ -14,6 +14,8 @@ from delta.tables import DeltaTable
 
 from urllib.parse import urlparse
 
+from phynfra.atomic.utils import sanitize
+
 PROFILES = {
 	'vanilla': {
 		'spark.master': 'local[*]'
@@ -597,6 +599,40 @@ class DataFramer ():
 				currentDepth += 1
 
 			self.dataframe = currentDataFrame
+
+			return self
+
+		except Exception as error:
+
+			raise error
+
+	def sanitizeColumns (self, dataframe: SparkDataFrame = None) -> 'DataFramer':
+		'''
+		Sanitizes column names in-memory, discarding blank or whitespace-only columns
+		dataframe:SparkDataFrame - Target DataFrame (defaults to self.dataframe)
+		'''
+
+		targetDataFrame = dataframe if isinstance(dataframe, SparkDataFrame) else self.dataframe
+
+		if not targetDataFrame:
+
+			raise ValueError('Cannot perform sanitizeColumns: DataFramer has no active DataFrame')
+
+		try:
+
+			validColumns = [col for col in targetDataFrame.columns if col and col.strip()]
+
+			if len(validColumns) == 0:
+
+				raise ValueError('All columns in DataFrame are empty or whitespace!')
+
+			filteredDataFrame = targetDataFrame.select(*validColumns)
+
+			sanitizedNames = [sanitize(col) for col in validColumns]
+
+			resultDataFrame = filteredDataFrame.toDF(*sanitizedNames)
+
+			self.dataframe = resultDataFrame
 
 			return self
 
