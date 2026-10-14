@@ -107,6 +107,42 @@ class Spark ():
 
 		self.spark.stop()
 
+	def restore (self, destination: str, version = None, timestamp = None) -> 'DataFramer':
+		'''
+		Restores a Delta Lake table to a previous version or timestamp
+		destination:str - Target path / URI of the Delta table
+		version:int|str - Version number to restore to
+		timestamp:str - Timestamp to restore to
+		'''
+
+		if (not destination) or (not isinstance(destination, str)) or (not destination.strip()):
+
+			raise ValueError('Destination must be a non-empty string!')
+
+		if (version is None) and (timestamp is None):
+
+			raise ValueError('At least one of version or timestamp must be provided for restore!')
+
+		try:
+
+			deltaTable = DeltaTable.forPath(self.spark, destination.strip())
+
+			if version is not None:
+
+				targetVersion = int(version) if isinstance(version, (int, str)) else version
+
+				deltaTable.restoreToVersion(targetVersion)
+
+			elif timestamp is not None:
+
+				deltaTable.restoreToTimestamp(str(timestamp).strip())
+
+			return DataFramer(self).read(destination.strip())
+
+		except Exception as error:
+
+			raise error
+
 class DataFramer ():
 	'''
 	Encapsulates Operations of/to a SparkDataFrame
@@ -165,11 +201,13 @@ class DataFramer ():
 
 		return self
 
-	def read (self, fullpath, arguments):
+	def read (self, fullpath: str, arguments: dict = None, version = None, timestamp = None) -> 'DataFramer':
 		'''
-		Build-in is a capacity of Spark itself
+		Build-in is a capacity of Spark itself with Delta Time Travel support
 		fullpath:str* - URI
-		arguments:dict
+		arguments:dict - Spark read options
+		version:int|str - Version number for Delta Time Travel (versionAsOf)
+		timestamp:str - Timestamp string for Delta Time Travel (timestampAsOf)
 		'''
 
 		if not fullpath:
@@ -178,23 +216,30 @@ class DataFramer ():
 
 		try:
 
-			parsed = urlparse(fullpath)
+			parsed = urlparse(fullpath.rstrip('/'))
 
 			basename = os.path.basename(parsed.path)
 
 			filename, extension = os.path.splitext(basename)
 
-			if not arguments:
+			readOptions = arguments.copy() if isinstance(arguments, dict) else {}
 
-				arguments = {
-					'format': extension[1:]
-				}
+			# Map time travel options with precedence of version over timestamp
+			if version is not None:
 
-			elif 'format' not in arguments:
+				readOptions['versionAsOf'] = version
 
-				arguments['format'] = extension[1:]
+			elif timestamp is not None:
 
-			self.dataframe = self.loadDataFrameNative(fullpath, arguments)
+				readOptions['timestampAsOf'] = str(timestamp).strip()
+
+			if 'format' not in readOptions:
+
+				fileExtension = extension[1:] if extension.startswith('.') else extension
+
+				readOptions['format'] = fileExtension if fileExtension else 'delta'
+
+			self.dataframe = self.loadDataFrameNative(fullpath, readOptions)
 
 			return self
 

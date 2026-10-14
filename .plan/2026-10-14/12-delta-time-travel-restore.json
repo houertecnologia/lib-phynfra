@@ -1,0 +1,24 @@
+{
+  "plan": "Suporte a Time Travel e Restauracao de Tabelas Delta",
+  "created_at": "2026-10-14T11:31:31-03:00",
+  "steps": [
+    {
+      "id": 1,
+      "description": "Atualizar DataFramer.read para suportar version e timestamp mapeados como versionAsOf e timestampAsOf",
+      "status": "done",
+      "files_affected": [
+        "phynfra/apache/spark.py"
+      ],
+      "done_at": "2026-10-14T11:36:15-03:00"
+    },
+    {
+      "id": 2,
+      "description": "Implementar Spark.restore para restaurar tabelas Delta por version ou timestamp e retornar DataFramer com a tabela",
+      "status": "done",
+      "files_affected": [
+        "phynfra/apache/spark.py"
+      ],
+      "done_at": "2026-10-14T11:36:32-03:00"
+    }
+  ]
+}
