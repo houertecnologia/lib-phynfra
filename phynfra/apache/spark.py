@@ -10,6 +10,20 @@ from pyspark.sql.types import ArrayType, DoubleType, FloatType, IntegerType, Lon
 
 from urllib.parse import urlparse
 
+PROFILES = {
+	'vanilla': {
+		'spark.master': 'local[*]'
+	},
+	'delta': {
+		'spark.master': 'local[*]',
+		'spark.sql.extensions': 'io.delta.sql.DeltaSparkSessionExtension',
+		'spark.sql.catalog.spark_catalog': 'org.apache.spark.sql.delta.catalog.DeltaCatalog',
+		'spark.serializer': 'org.apache.spark.serializer.KryoSerializer',
+		'spark.databricks.delta.schema.autoMerge.enabled': 'true',
+		'spark.sql.sources.partitionOverwriteMode': 'dynamic'
+	}
+}
+
 class Spark ():
 	'''
 	Spark Class
@@ -18,33 +32,56 @@ class Spark ():
 	spark-submit is not runnable from this class. It requires spark-cli installed in local machine
 	'''
 	
-	def __init__ (self, application, configuration = None, level = 'WARN'):
+	def __init__ (self, application: str, configuration: dict = None, level: str = 'WARN', profile: str = 'delta') -> None:
 		'''
-		Initialize a SparkSession
+		Initialize a SparkSession with profiles and custom configurations
 		application:str - Application name
-		configuration:dict - From .env configuration
-		level:str - DEBUG Level - WARN Default
+		configuration:dict - Custom Spark configurations (overrides profile defaults)
+		level:str - Log level (e.g. 'WARN', 'INFO', 'DEBUG', 'ERROR')
+		profile:str - Profile name ('vanilla' or 'delta', defaults to 'delta')
 		'''
 
-		if not application:
+		if (not application) or (not isinstance(application, str)):
 
-			raise ValueError('Spark Application Name is required!')
-		
+			raise ValueError('Spark Application Name must be a non-empty string!')
+
+		if (profile is not None) and (profile not in PROFILES):
+
+			raise ValueError('Invalid Spark profile: %s. Expected one of: %s' % (profile, list(PROFILES.keys())))
+
+		if (configuration is not None) and (not isinstance(configuration, dict)):
+
+			raise ValueError('Configuration must be a dictionary or None!')
+
+		effectiveConfiguration = {}
+
+		if (profile in PROFILES):
+
+			effectiveConfiguration.update(PROFILES[profile])
+
+		if isinstance(configuration, dict):
+
+			effectiveConfiguration.update(configuration)
+
 		try:
 
 			builder = SparkSession.builder.appName(application)
 
-			if isinstance(configuration, dict):
+			for (key, value) in effectiveConfiguration.items():
 
-				for (key, value) in configuration.items():
-
-					builder.config(str(key).strip(), str(value).strip())
-
-			else:
-
-				builder = builder.master('local[*]')
+				builder.config(str(key).strip(), str(value).strip())
 
 			self.spark = builder.getOrCreate()
+
+		except Exception as error:
+
+			raise error
+
+		try:
+
+			if level and hasattr(self.spark, 'sparkContext') and self.spark.sparkContext:
+
+				self.spark.sparkContext.setLogLevel(str(level).strip())
 
 		except Exception as error:
 
