@@ -3,6 +3,7 @@
 import os
 
 from pyspark.sql import SparkSession, functions as F
+from pyspark.sql.window import Window
 from pyspark.sql.utils import AnalysisException
 
 from pandas import DataFrame as PandasDataFrame
@@ -380,6 +381,60 @@ class DataFramer ():
 			raise error
 
 		return self
+
+	def deduplicate (self, primaryKeys, timestampColumn: str, dataframe: SparkDataFrame = None) -> 'DataFramer':
+		'''
+		Deterministic deduplication keeping the most recent version
+		primaryKeys:list|str - Key column(s) for partitioning
+		timestampColumn:str - Column name representing the record timestamp
+		dataframe:SparkDataFrame - Target DataFrame (defaults to self.dataframe)
+		'''
+
+		if not primaryKeys:
+
+			raise ValueError('primaryKeys must be informed!')
+
+		if isinstance(primaryKeys, str):
+
+			keys = [primaryKeys.strip()]
+
+		elif isinstance(primaryKeys, (list, tuple)):
+
+			keys = [str(pk).strip() for pk in primaryKeys if str(pk).strip()]
+
+		else:
+
+			raise ValueError('primaryKeys must be a string or list/tuple of strings!')
+
+		if len(keys) == 0:
+
+			raise ValueError('primaryKeys must contain at least one valid column name!')
+
+		if (not timestampColumn) or (not isinstance(timestampColumn, str)):
+
+			raise ValueError('timestampColumn must be a non-empty string!')
+
+		targetDataFrame = dataframe if isinstance(dataframe, SparkDataFrame) else self.dataframe
+
+		if not targetDataFrame:
+
+			raise ValueError('Cannot perform deduplicate: DataFramer has no active DataFrame')
+
+		try:
+
+			deduplicationWindow = Window.partitionBy(keys).orderBy(F.col(timestampColumn).desc(), F.col('tiebreak').desc())
+
+			deduplicatedDataFrame = targetDataFrame.withColumn('tiebreak', F.monotonically_increasing_id()).withColumn('rank', F.rank().over(deduplicationWindow)).filter(F.col('rank') == 1).drop('rank', 'tiebreak')
+
+			if dataframe is None:
+
+				self.dataframe = deduplicatedDataFrame
+
+			return self
+
+		except Exception as error:
+
+			raise error
 
 	def loadDataFrameNative (self, fullpath, arguments):
 		'''
