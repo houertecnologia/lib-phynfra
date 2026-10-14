@@ -5,7 +5,7 @@ import boto3
 
 from phynfra.atomic.utils import is_not_string, is_not_list
 from phynfra.apache.spark import DataFramer
-from pyspark.sql.dataframe import DataFrame as SparkDataFrame
+from pyspark.sql import DataFrame as SparkDataFrame
 
 from botocore.config import Config
 

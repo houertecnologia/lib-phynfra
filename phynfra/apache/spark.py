@@ -5,7 +5,7 @@ import os
 from pyspark.sql import SparkSession
 
 from pandas import DataFrame as PandasDataFrame
-from pyspark.sql.dataframe import DataFrame as SparkDataFrame
+from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql.types import ArrayType, DoubleType, FloatType, IntegerType, LongType, StringType, StructField, StructType, TimestampType
 
 from urllib.parse import urlparse
@@ -249,7 +249,7 @@ class DataFramer ():
 
 				return self.dataframe.collect()
 
-			elif isinstance(instance, PandasDataFrame):
+			elif isinstance(self.dataframe, PandasDataFrame):
 
 				return self.dataframe.values.tolist()
 

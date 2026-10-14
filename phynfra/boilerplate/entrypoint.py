@@ -20,7 +20,7 @@ def main ():
 	RECOMENDATION: These vars should be in Airflow as "Variable" or secrets manager.
 	I do not recall, but if s3:// fails, Spark requires s3a://
 
-	docker run -d --name spark -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION --network some apache/spark:3.5.7 sleep infinity
+	docker run -d --name spark -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION --network some apache/spark:4.0.0 sleep infinity
 
 	spark-submit s3://your-bucket/wheels/yourproject.whl --entrypoint entrypoint.py --module test --settings s3://.../settings.json --other args...
 
