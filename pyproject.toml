@@ -33,6 +33,9 @@ slack_sdk = "*"
 watchtower = ">=3.4.0,<4.0.0"
 uuid7 = ">=0.1.0,<0.2.0"
 pyyaml = ">=6.0,<7.0"
+python-docx = "*"
+pillow = "*"
+psycopg2-binary = "*"
 
 [poetry.group.dev.dependencies]
 poetry = "*"

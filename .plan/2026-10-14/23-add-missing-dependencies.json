@@ -1,0 +1,15 @@
+{
+  "plan": "Inclusao de Dependencias Ausentes no pyproject.toml",
+  "created_at": "2026-10-14T12:47:45-03:00",
+  "steps": [
+    {
+      "id": 1,
+      "description": "Incluir python-docx, pillow e psycopg2-binary em pyproject.toml",
+      "status": "done",
+      "files_affected": [
+        "pyproject.toml"
+      ],
+      "done_at": "2026-10-14T13:04:00-03:00"
+    }
+  ]
+}
