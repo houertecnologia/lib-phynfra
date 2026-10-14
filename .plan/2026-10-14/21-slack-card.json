@@ -1,0 +1,15 @@
+{
+  "plan": "Implementacao do Metodo Slack.card",
+  "created_at": "2026-10-14T12:36:34-03:00",
+  "steps": [
+    {
+      "id": 1,
+      "description": "Implementar metodo card na classe Slack em phynfra/slack/__init__.py para envio de mensagens com Block Kit",
+      "status": "done",
+      "files_affected": [
+        "phynfra/slack/__init__.py"
+      ],
+      "done_at": "2026-10-14T12:38:03-03:00"
+    }
+  ]
+}
