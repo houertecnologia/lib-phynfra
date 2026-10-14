@@ -3,10 +3,13 @@
 import os
 
 from pyspark.sql import SparkSession
+from pyspark.sql.utils import AnalysisException
 
 from pandas import DataFrame as PandasDataFrame
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql.types import ArrayType, DoubleType, FloatType, IntegerType, LongType, StringType, StructField, StructType, TimestampType
+
+from delta.tables import DeltaTable
 
 from urllib.parse import urlparse
 
@@ -296,6 +299,62 @@ class DataFramer ():
 		except Exception as error:
 
 			raise error
+
+	def upsert (self, destination: str, primaryKeys, dataframe: SparkDataFrame = None) -> 'DataFramer':
+		'''
+		Atomic MERGE operation for Delta Lake tables
+		destination:str - Target URI / path of the Delta table
+		primaryKeys:list|str - Key column(s) for the merge condition
+		dataframe:SparkDataFrame - Source DataFrame (defaults to self.dataframe)
+		'''
+
+		if (not destination) or (not isinstance(destination, str)):
+
+			raise ValueError('Destination must be a non-empty string!')
+
+		if not primaryKeys:
+
+			raise ValueError('primaryKeys must be informed!')
+
+		if isinstance(primaryKeys, str):
+
+			keys = [primaryKeys.strip()]
+
+		elif isinstance(primaryKeys, (list, tuple)):
+
+			keys = [str(pk).strip() for pk in primaryKeys if str(pk).strip()]
+
+		else:
+
+			raise ValueError('primaryKeys must be a string or list/tuple of strings!')
+
+		if len(keys) == 0:
+
+			raise ValueError('primaryKeys must contain at least one valid column name!')
+
+		sourceDataFrame = dataframe if isinstance(dataframe, SparkDataFrame) else self.dataframe
+
+		if not sourceDataFrame:
+
+			raise ValueError('Cannot perform upsert: DataFramer has no active DataFrame')
+
+		mergeCondition = ' AND '.join([f'target.{pk} = source.{pk}' for pk in keys])
+
+		try:
+
+			deltaTable = DeltaTable.forPath(self._spark, destination)
+
+			deltaTable.alias('target').merge(sourceDataFrame.alias('source'), mergeCondition).whenMatchedUpdateAll().whenNotMatchedInsertAll().execute()
+
+		except AnalysisException:
+
+			sourceDataFrame.write.format('delta').save(destination)
+
+		except Exception as error:
+
+			raise error
+
+		return self
 
 	def loadDataFrameNative (self, fullpath, arguments):
 		'''
