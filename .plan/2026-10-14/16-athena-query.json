@@ -1,0 +1,15 @@
+{
+  "plan": "Implementacao do Metodo Athena.query",
+  "created_at": "2026-10-14T12:00:59-03:00",
+  "steps": [
+    {
+      "id": 1,
+      "description": "Importar time e implementar Athena.query com polling sincrono, timeout, e retorno dual como DataFramer ou lista de dicionarios",
+      "status": "done",
+      "files_affected": [
+        "phynfra/aws/athena.py"
+      ],
+      "done_at": "2026-10-14T12:02:33-03:00"
+    }
+  ]
+}
