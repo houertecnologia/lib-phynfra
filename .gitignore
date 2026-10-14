@@ -1575,3 +1575,5 @@ gradle-app.setting
 # Ionide (cross platform F# VS Code tools) working folder
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,linux,macos,vscode,visualstudio,visualstudiocode,python,node,monodevelop,csharp,webstorm+all,sublimetext,flutter,dart,darteditor,phpstorm+all,jenv,venv,direnv,dotenv,virtualenv,java,java-web,eclipse,erlang,julia,rust,netbeans,adobe,objective-c,swift,swiftpackagemanager,ruby,elixir,phoenix,gradle,vagrant,composer,phpunit
+
+.plan/
