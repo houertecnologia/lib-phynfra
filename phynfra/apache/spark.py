@@ -494,6 +494,115 @@ class DataFramer ():
 
 		return self
 
+	def flatten (self, columns = None, separator: str = '_', explodeArrays: bool = False, maxDepth: int = None, dataframe: SparkDataFrame = None) -> 'DataFramer':
+		'''
+		Structured in-memory flattening for nested StructType and ArrayType fields
+		columns:list|str - Specific columns to flatten (defaults to all)
+		separator:str - Separator between parent and child column names (default '_')
+		explodeArrays:bool - Whether to explode ArrayType fields using explode_outer
+		maxDepth:int - Maximum depth of flattening iterations
+		dataframe:SparkDataFrame - Target DataFrame (defaults to self.dataframe)
+		'''
+
+		targetDataFrame = dataframe if isinstance(dataframe, SparkDataFrame) else self.dataframe
+
+		if not targetDataFrame:
+
+			raise ValueError('Cannot perform flatten: DataFramer has no active DataFrame')
+
+		targetColumns = None
+
+		if columns is not None:
+
+			if isinstance(columns, str):
+
+				targetColumns = [columns.strip()]
+
+			elif isinstance(columns, (list, tuple)):
+
+				targetColumns = [str(col).strip() for col in columns if str(col).strip()]
+
+			else:
+
+				raise ValueError('columns must be a string or list/tuple of strings!')
+
+		try:
+
+			currentDataFrame = targetDataFrame
+
+			currentDepth = 0
+
+			activeColumns = targetColumns.copy() if targetColumns is not None else None
+
+			while True:
+
+				if (maxDepth is not None) and isinstance(maxDepth, int) and (currentDepth >= maxDepth):
+
+					break
+
+				fields = currentDataFrame.schema.fields
+
+				structFields = [f for f in fields if isinstance(f.dataType, StructType) and ((activeColumns is None) or (f.name in activeColumns))]
+
+				arrayFields = [f for f in fields if isinstance(f.dataType, ArrayType) and ((activeColumns is None) or (f.name in activeColumns))] if explodeArrays else []
+
+				if (len(structFields) == 0) and (len(arrayFields) == 0):
+
+					break
+
+				if len(arrayFields) > 0:
+
+					for arrayField in arrayFields:
+
+						currentDataFrame = currentDataFrame.withColumn(arrayField.name, F.explode_outer(F.col(arrayField.name)))
+
+					fields = currentDataFrame.schema.fields
+
+					structFields = [f for f in fields if isinstance(f.dataType, StructType) and ((activeColumns is None) or (f.name in activeColumns))]
+
+				if len(structFields) > 0:
+
+					selectExpressions = []
+
+					newActiveColumns = set(activeColumns) if activeColumns is not None else None
+
+					for field in fields:
+
+						if field in structFields:
+
+							if newActiveColumns is not None:
+
+								newActiveColumns.discard(field.name)
+
+							for childField in field.dataType.fields:
+
+								newColName = f'{field.name}{separator}{childField.name}'
+
+								selectExpressions.append(F.col(f'{field.name}.{childField.name}').alias(newColName))
+
+								if newActiveColumns is not None:
+
+									newActiveColumns.add(newColName)
+
+						else:
+
+							selectExpressions.append(F.col(field.name))
+
+					currentDataFrame = currentDataFrame.select(*selectExpressions)
+
+					if activeColumns is not None:
+
+						activeColumns = list(newActiveColumns)
+
+				currentDepth += 1
+
+			self.dataframe = currentDataFrame
+
+			return self
+
+		except Exception as error:
+
+			raise error
+
 	# get_df_latest_batch :: https://github.com/houertecnologia/project-turboman/blob/dev/processing/app/commons/helpers/spark_utils.py
-	# flatten :: https://github.com/houertecnologia/project-turboman/blob/dev/processing/app/commons/helpers/spark_utils.py
 	
