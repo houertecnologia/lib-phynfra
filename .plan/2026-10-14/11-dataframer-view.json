@@ -1,0 +1,15 @@
+{
+  "plan": "Implementacao do Metodo DataFramer.view",
+  "created_at": "2026-10-14T11:19:38-03:00",
+  "steps": [
+    {
+      "id": 1,
+      "description": "Implementar DataFramer.view para registrar Temporary Views na sessao Spark com retorno fluente",
+      "status": "done",
+      "files_affected": [
+        "phynfra/apache/spark.py"
+      ],
+      "done_at": "2026-10-14T11:30:25-03:00"
+    }
+  ]
+}

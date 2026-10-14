@@ -724,5 +724,32 @@ class DataFramer ():
 
 			raise error
 
+	def view (self, name: str, dataframe: SparkDataFrame = None) -> 'DataFramer':
+		'''
+		Registers the current or specified DataFrame as a Temporary View in the SparkSession
+		name:str - Name of the temporary view
+		dataframe:SparkDataFrame - Target DataFrame (defaults to self.dataframe)
+		'''
+
+		if (not name) or (not isinstance(name, str)) or (not name.strip()):
+
+			raise ValueError('View name must be a non-empty string!')
+
+		targetDataFrame = dataframe if isinstance(dataframe, SparkDataFrame) else self.dataframe
+
+		if not targetDataFrame:
+
+			raise ValueError('Cannot create view: DataFramer has no active DataFrame')
+
+		try:
+
+			targetDataFrame.createOrReplaceTempView(name.strip())
+
+			return self
+
+		except Exception as error:
+
+			raise error
+
 	# get_df_latest_batch :: https://github.com/houertecnologia/project-turboman/blob/dev/processing/app/commons/helpers/spark_utils.py
 	
