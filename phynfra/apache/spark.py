@@ -2,7 +2,7 @@
 
 import os
 
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession, functions as F
 from pyspark.sql.utils import AnalysisException
 
 from pandas import DataFrame as PandasDataFrame
@@ -317,12 +317,14 @@ class DataFramer ():
 
 			raise error
 
-	def upsert (self, destination: str, primaryKeys, dataframe: SparkDataFrame = None) -> 'DataFramer':
+	def upsert (self, destination: str, primaryKeys, dataframe: SparkDataFrame = None, trackDeletes: bool = False, deleteColumn: str = 'deleted_at') -> 'DataFramer':
 		'''
-		Atomic MERGE operation for Delta Lake tables
+		Atomic MERGE operation for Delta Lake tables with optional soft delete tracking
 		destination:str - Target URI / path of the Delta table
 		primaryKeys:list|str - Key column(s) for the merge condition
 		dataframe:SparkDataFrame - Source DataFrame (defaults to self.dataframe)
+		trackDeletes:bool - Enables logical deletion tracking (whenNotMatchedBySourceUpdate)
+		deleteColumn:str - Column name for soft delete timestamp
 		'''
 
 		if (not destination) or (not isinstance(destination, str)):
@@ -361,7 +363,13 @@ class DataFramer ():
 
 			deltaTable = DeltaTable.forPath(self._spark, destination)
 
-			deltaTable.alias('target').merge(sourceDataFrame.alias('source'), mergeCondition).whenMatchedUpdateAll().whenNotMatchedInsertAll().execute()
+			mergeBuilder = deltaTable.alias('target').merge(sourceDataFrame.alias('source'), mergeCondition).whenMatchedUpdateAll().whenNotMatchedInsertAll()
+
+			if trackDeletes:
+
+				mergeBuilder = mergeBuilder.whenNotMatchedBySourceUpdate(condition = f'target.{deleteColumn} IS NULL', set = {f'target.{deleteColumn}': F.current_timestamp()})
+
+			mergeBuilder.execute()
 
 		except AnalysisException:
 

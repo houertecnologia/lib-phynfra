@@ -1,0 +1,15 @@
+{
+  "plan": "Rastreamento de Exclusoes Logicas no DataFramer.upsert",
+  "created_at": "2026-10-14T10:44:58-03:00",
+  "steps": [
+    {
+      "id": 1,
+      "description": "Importar functions as F e adicionar trackDeletes e deleteColumn com whenNotMatchedBySourceUpdate no DataFramer.upsert",
+      "status": "done",
+      "files_affected": [
+        "phynfra/apache/spark.py"
+      ],
+      "done_at": "2026-10-14T10:46:25-03:00"
+    }
+  ]
+}
