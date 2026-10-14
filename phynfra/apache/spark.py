@@ -640,5 +640,89 @@ class DataFramer ():
 
 			raise error
 
+	def enforce (self, schema: list, fallback: str = 'string', dataframe: SparkDataFrame = None) -> 'DataFramer':
+		'''
+		Enforces a strict schema contract with missing column injection and fallback type casting
+		schema:list - List of dicts with 'source', 'target', and 'type' keys
+		fallback:str - Fallback DataType when casting fails (default 'string')
+		dataframe:SparkDataFrame - Target DataFrame (defaults to self.dataframe)
+		'''
+
+		if (not schema) or (not isinstance(schema, (list, tuple))) or (len(schema) == 0):
+
+			raise ValueError('schema must be a non-empty list of dictionaries!')
+
+		for index, item in enumerate(schema):
+
+			if (not isinstance(item, dict)):
+
+				raise ValueError('schema item at index %s must be a dictionary!' % index)
+
+			if ('source' not in item) or ('target' not in item) or ('type' not in item):
+
+				raise ValueError('schema item at index %s must contain keys: source, target, type!' % index)
+
+			if (not item['source']) or (not item['target']) or (not item['type']):
+
+				raise ValueError('schema item at index %s has empty source, target or type!' % index)
+
+		targetDataFrame = dataframe if isinstance(dataframe, SparkDataFrame) else self.dataframe
+
+		if not targetDataFrame:
+
+			raise ValueError('Cannot perform enforce: DataFramer has no active DataFrame')
+
+		try:
+
+			currentDataFrame = targetDataFrame
+
+			availableColumns = set(currentDataFrame.columns)
+
+			# Ensure all source columns exist
+			for item in schema:
+
+				sourceCol = str(item['source']).strip()
+
+				if sourceCol not in availableColumns:
+
+					currentDataFrame = currentDataFrame.withColumn(sourceCol, F.lit(None))
+
+					availableColumns.add(sourceCol)
+
+			# Build projections with type casting and fallback
+			selectExpressions = []
+
+			for item in schema:
+
+				sourceCol = str(item['source']).strip()
+
+				targetCol = str(item['target']).strip()
+
+				targetType = item['type']
+
+				try:
+
+					castExpr = F.col(sourceCol).cast(targetType).alias(targetCol)
+
+					currentDataFrame.select(castExpr)
+
+					selectExpressions.append(castExpr)
+
+				except Exception:
+
+					fallbackExpr = F.col(sourceCol).cast(fallback).alias(targetCol)
+
+					selectExpressions.append(fallbackExpr)
+
+			resultDataFrame = currentDataFrame.select(*selectExpressions)
+
+			self.dataframe = resultDataFrame
+
+			return self
+
+		except Exception as error:
+
+			raise error
+
 	# get_df_latest_batch :: https://github.com/houertecnologia/project-turboman/blob/dev/processing/app/commons/helpers/spark_utils.py
 	

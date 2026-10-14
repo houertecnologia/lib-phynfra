@@ -1,0 +1,15 @@
+{
+  "plan": "Implementacao do Metodo DataFramer.enforce",
+  "created_at": "2026-10-14T11:10:18-03:00",
+  "steps": [
+    {
+      "id": 1,
+      "description": "Implementar DataFramer.enforce para contratos de schema estritos com criacao de lit(None), casts tolerantes a falhas e retorno fluente",
+      "status": "done",
+      "files_affected": [
+        "phynfra/apache/spark.py"
+      ],
+      "done_at": "2026-10-14T11:11:58-03:00"
+    }
+  ]
+}
