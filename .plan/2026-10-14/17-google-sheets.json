@@ -1,0 +1,15 @@
+{
+  "plan": "Implementacao do Modulo Google Sheets",
+  "created_at": "2026-10-14T12:05:39-03:00",
+  "steps": [
+    {
+      "id": 1,
+      "description": "Criar phynfra/google/sheets.py com a classe Sheets e metodo read para integracao com Google Sheets API v4 e retorno como lista de dicts ou DataFramer",
+      "status": "done",
+      "files_affected": [
+        "phynfra/google/sheets.py"
+      ],
+      "done_at": "2026-10-14T12:08:16-03:00"
+    }
+  ]
+}
