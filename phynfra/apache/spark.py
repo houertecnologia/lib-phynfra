@@ -196,45 +196,100 @@ class DataFramer ():
 
 			raise error
 
-	def write (self, fullpath, arguments, dataframe = None, overwrite = True):
+	def write (self, fullpath: str, arguments: dict = None, dataframe: SparkDataFrame = None, mode: str = 'append', partitions = None, overwrite: bool = None) -> 'DataFramer':
 		'''
-		Build-in is a capacity of Spark itself
-		fullpath:str* - URI
-		arguments:dict
-		dataframe:SparkDataFrame - Another DF to be written
+		Unified write method supporting simple and partitioned writes with Delta Lake default
+		fullpath:str* - Target URI (e.g. s3a://..., file://...)
+		arguments:dict - Spark write options
+		dataframe:SparkDataFrame - DataFrame to be written (defaults to self.dataframe)
+		mode:str - Write mode ('append', 'overwrite', 'ignore', 'error', defaults to 'append')
+		partitions:list|str - Partition column names
+		overwrite:bool - Legacy flag for backwards compatibility
 		'''
 
-		if not fullpath:
+		if (not fullpath) or (not isinstance(fullpath, str)):
 
-			raise ValueError('Cannot write to a destination without a fullpath')
+			raise ValueError('Cannot write to a destination without a valid fullpath string')
+
+		targetDataFrame = dataframe if isinstance(dataframe, SparkDataFrame) else self.dataframe
+
+		if not targetDataFrame:
+
+			raise ValueError('Cannot write: DataFramer has no active DataFrame')
 
 		try:
 
-			parsed = urlparse(fullpath)
+			# Resolve legacy overwrite flag if explicitly provided
+			effectiveMode = mode
+
+			if (overwrite is True):
+
+				effectiveMode = 'overwrite'
+
+			elif (overwrite is False) and (mode == 'append'):
+
+				effectiveMode = 'append'
+
+			# Parse path and extension, stripping trailing slashes
+			cleanPath = fullpath.rstrip('/')
+
+			parsed = urlparse(cleanPath)
 
 			basename = os.path.basename(parsed.path)
 
 			filename, extension = os.path.splitext(basename)
 
-			if not arguments:
+			fileExtension = extension[1:] if extension.startswith('.') else extension
 
-				arguments = {
-					'format': extension[1:]
-				}
+			# Normalize write arguments
+			writeOptions = arguments.copy() if isinstance(arguments, dict) else {}
 
-			elif 'format' not in arguments:
+			# Determine file format: arguments['format'] > fileExtension > 'delta'
+			if ('format' in writeOptions) and writeOptions['format']:
 
-				arguments['format'] = extension[1:]
+				fileFormat = str(writeOptions.pop('format')).strip()
 
-			outer = dataframe if isinstance(dataframe, SparkDataFrame) else self.dataframe
+			elif fileExtension:
 
-			if overwrite == True:
-
-				outer.write.mode('overwrite').save(fullpath, **arguments)
+				fileFormat = fileExtension.strip()
 
 			else:
 
-				outer.write.save(fullpath, **arguments)
+				fileFormat = 'delta'
+
+			# Resolve partition columns: partitions argument > writeOptions['partitions'] > writeOptions['partition_columns']
+			rawPartitions = partitions
+
+			if (rawPartitions is None):
+
+				if ('partitions' in writeOptions):
+
+					rawPartitions = writeOptions.pop('partitions')
+
+				elif ('partition_columns' in writeOptions):
+
+					rawPartitions = writeOptions.pop('partition_columns')
+
+			if isinstance(rawPartitions, str):
+
+				partitionColumns = [rawPartitions.strip()]
+
+			elif isinstance(rawPartitions, (list, tuple)):
+
+				partitionColumns = [str(col).strip() for col in rawPartitions]
+
+			else:
+
+				partitionColumns = []
+
+			# Build writer with chained calls
+			writer = targetDataFrame.write.format(fileFormat).mode(effectiveMode).options(**writeOptions)
+
+			if (len(partitionColumns) > 0):
+
+				writer = writer.partitionBy(*partitionColumns)
+
+			writer.save(fullpath)
 
 			return self
 
