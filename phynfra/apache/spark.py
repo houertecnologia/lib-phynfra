@@ -260,6 +260,23 @@ class DataFramer ():
 
 				fileFormat = 'delta'
 
+			# Medallion architecture compliance check
+			lowerPath = fullpath.lower()
+
+			protectedZones = ['bronze', 'silver', 'gold']
+
+			for zone in protectedZones:
+
+				patterns = ['/%s/' % zone, '/%s' % zone, '-%s/' % zone, '-%s' % zone]
+
+				if any([pattern in lowerPath for pattern in patterns]):
+
+					if fileFormat.lower() != 'delta':
+
+						raise ValueError('Medallion architecture violation: %s zone requires Delta Lake (delta) format, but received: %s' % (zone, fileFormat))
+
+					break
+
 			# Resolve partition columns: partitions argument > writeOptions['partitions'] > writeOptions['partition_columns']
 			rawPartitions = partitions
 

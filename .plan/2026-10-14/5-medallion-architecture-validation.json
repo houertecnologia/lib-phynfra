@@ -1,0 +1,15 @@
+{
+  "plan": "Validacao de Conformidade da Arquitetura Medalhao no DataFramer.write",
+  "created_at": "2026-10-14T10:41:43-03:00",
+  "steps": [
+    {
+      "id": 1,
+      "description": "Adicionar validacao de conformidade para zonas bronze, silver e gold exigindo formato delta no DataFramer.write",
+      "status": "done",
+      "files_affected": [
+        "phynfra/apache/spark.py"
+      ],
+      "done_at": "2026-10-14T10:43:11-03:00"
+    }
+  ]
+}
