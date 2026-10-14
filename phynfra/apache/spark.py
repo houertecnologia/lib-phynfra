@@ -489,35 +489,110 @@ class DataFramer ():
 
 		return self._spark.read.load(fullpath, **arguments)
 
-	def to_pandas (self):
+	def convertFrom (self, dataframe: PandasDataFrame, origin: str = 'pandas', intConstant: int = -1234567) -> 'DataFramer':
 		'''
-		'''
-
-		if self.dataframe:
-
-			self.dataframe = self.dataframe.toPandas()
-
-		else:
-
-			raise ValueError('Cannot convert to Pandas\' DataFrame something that does not exist')
-
-		return self
-
-	def from_pandas (self, dataframe = None):
-		'''
+		Converts external data (such as Pandas 2+ DataFrames) into a Spark DataFrame
+		dataframe:PandasDataFrame - Source DataFrame to convert
+		origin:str - Source format (supported: 'pandas')
+		intConstant:int - Sentinel value to preserve integer nullability during PyArrow conversion
 		'''
 
-		reference = dataframe if dataframe else self.dataframe
+		if (not origin) or (origin.lower() != 'pandas'):
 
-		if reference and isinstance(reference, PandasDataFrame):
+			raise ValueError("Origin '%s' is not supported. Supported origins: ['pandas']" % origin)
 
-			self.dataframe = self._spark.createDataFrame(reference)
+		if (dataframe is None) or (not isinstance(dataframe, PandasDataFrame)):
 
-		else:
+			raise ValueError('dataframe must be an instance of pandas.DataFrame')
 
-			raise ValueError('DataFrame must be an instance of pandas.DataFrame to be converted')
+		try:
 
-		return self
+			dfCopy = dataframe.copy()
+
+			fields = []
+
+			hasIntReplacements = False
+
+			for colName, dtype in dfCopy.dtypes.items():
+
+				dtypeStr = str(dtype).lower()
+
+				if ('int' in dtypeStr) or ('integer' in dtypeStr):
+
+					if ('64' in dtypeStr) or (dtypeStr == 'int'):
+
+						sparkType = LongType()
+
+						dfCopy[colName] = dfCopy[colName].fillna(intConstant).astype('int64')
+
+					else:
+
+						sparkType = IntegerType()
+
+						dfCopy[colName] = dfCopy[colName].fillna(intConstant).astype('int32')
+
+					hasIntReplacements = True
+
+				elif ('float' in dtypeStr) or ('double' in dtypeStr):
+
+					sparkType = FloatType() if '32' in dtypeStr else DoubleType()
+
+				elif ('datetime' in dtypeStr) or ('timestamp' in dtypeStr):
+
+					sparkType = TimestampType()
+
+				else:
+
+					sparkType = StringType()
+
+				fields.append(StructField(str(colName), sparkType, True))
+
+			schema = StructType(fields)
+
+			data = dfCopy.values.tolist()
+
+			sparkDf = self._spark.createDataFrame(data, schema = schema)
+
+			if hasIntReplacements:
+
+				sparkDf = sparkDf.replace(intConstant, None)
+
+			self.dataframe = sparkDf
+
+			return self
+
+		except Exception as error:
+
+			raise error
+
+	def convertTo (self, target: str = 'pandas') -> PandasDataFrame:
+		'''
+		Converts the current Spark DataFrame to the target format
+		target:str - Target format (supported: 'pandas')
+		'''
+
+		if (not target) or (target.lower() != 'pandas'):
+
+			raise ValueError("Target '%s' is not supported. Supported targets: ['pandas']" % target)
+
+		if not self.dataframe:
+
+			raise ValueError('Cannot convert to %s: DataFramer has no active DataFrame' % target)
+
+		try:
+
+			return self.dataframe.toPandas()
+
+		except Exception as error:
+
+			raise error
+
+	def to (self, target: str = 'pandas') -> PandasDataFrame:
+		'''
+		Alias for convertTo
+		'''
+
+		return self.convertTo(target)
 
 	def to_list (self):
 
