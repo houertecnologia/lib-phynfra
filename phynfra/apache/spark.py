@@ -796,5 +796,36 @@ class DataFramer ():
 
 			raise error
 
-	# get_df_latest_batch :: https://github.com/houertecnologia/project-turboman/blob/dev/processing/app/commons/helpers/spark_utils.py
+	def latest (self, column: str, dataframe: SparkDataFrame = None) -> 'DataFramer':
+		'''
+		Filters the DataFrame keeping only records with the maximum value of the specified column
+		column:str - Column name to find the maximum value
+		dataframe:SparkDataFrame - Target DataFrame (defaults to self.dataframe)
+		'''
+
+		if (not column) or (not isinstance(column, str)) or (not column.strip()):
+
+			raise ValueError('Column name must be a non-empty string!')
+
+		targetDataFrame = dataframe if isinstance(dataframe, SparkDataFrame) else self.dataframe
+
+		if not targetDataFrame:
+
+			raise ValueError('Cannot perform latest: DataFramer has no active DataFrame')
+
+		try:
+
+			colName = column.strip()
+
+			maxValue = targetDataFrame.select(F.max(F.col(colName))).collect()[0][0]
+
+			resultDataFrame = targetDataFrame.filter(F.col(colName) == maxValue)
+
+			self.dataframe = resultDataFrame
+
+			return self
+
+		except Exception as error:
+
+			raise error
 	
